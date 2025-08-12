@@ -63,15 +63,12 @@ int main(int argc, char** argv) // NOLINT(bugprone-exception-escape)
   long long simulation_instructions = std::numeric_limits<long long>::max();
   std::string json_file_name;
   std::vector<std::string> trace_names;
-
-  auto set_heartbeat_callback = [&](auto) {
-    for (O3_CPU& cpu : gen_environment.cpu_view()) {
-      cpu.show_heartbeat = false;
-    }
-  };
+  bool hide_heartbeat{false};
+  long long heartbeat_interval = 500000;
 
   app.add_flag("-c,--cloudsuite", knob_cloudsuite, "Read all traces using the cloudsuite format");
-  app.add_flag("--hide-heartbeat", set_heartbeat_callback, "Hide the heartbeat output");
+  app.add_flag("--hide-heartbeat", hide_heartbeat, "Hide the heartbeat output");
+  app.add_option("--heartbeat-interval", heartbeat_interval, "The frequency of printing heartbeat");
   auto* warmup_instr_option = app.add_option("-w,--warmup-instructions", warmup_instructions, "The number of instructions in the warmup phase");
   auto* deprec_warmup_instr_option =
       app.add_option("--warmup_instructions", warmup_instructions, "[deprecated] use --warmup-instructions instead")->excludes(warmup_instr_option);
@@ -86,6 +83,11 @@ int main(int argc, char** argv) // NOLINT(bugprone-exception-escape)
   app.add_option("traces", trace_names, "The paths to the traces")->required()->expected(NUM_CPUS)->check(CLI::ExistingFile);
 
   CLI11_PARSE(app, argc, argv);
+
+  for (O3_CPU& cpu : gen_environment.cpu_view()) {
+	  cpu.show_heartbeat = hide_heartbeat ? false : true;
+	  cpu.heartbeat_interval = heartbeat_interval;
+  }
 
   const bool warmup_given = (warmup_instr_option->count() > 0) || (deprec_warmup_instr_option->count() > 0);
   const bool simulation_given = (sim_instr_option->count() > 0) || (deprec_sim_instr_option->count() > 0);

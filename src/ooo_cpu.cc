@@ -32,8 +32,6 @@
 
 std::chrono::seconds elapsed_time();
 
-constexpr long long STAT_PRINTING_PERIOD = 10000000;
-
 long O3_CPU::operate()
 {
   long progress{0};
@@ -53,7 +51,7 @@ long O3_CPU::operate()
   initialize_instruction();
 
   // heartbeat
-  if (show_heartbeat && (num_retired >= (last_heartbeat_instr + STAT_PRINTING_PERIOD))) {
+  if (show_heartbeat && (num_retired >= (last_heartbeat_instr + heartbeat_interval))) {
     using double_duration = std::chrono::duration<double, typename champsim::chrono::picoseconds::period>;
     auto heartbeat_instr{std::ceil(num_retired - last_heartbeat_instr)};
     auto heartbeat_cycle{double_duration{current_time - last_heartbeat_time} / clock_period};

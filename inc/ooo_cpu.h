@@ -97,6 +97,7 @@ public:
   long long num_retired = 0;
 
   bool show_heartbeat = true;
+  long long heartbeat_interval = 1000000;
 
   using stats_type = cpu_stats;
 
