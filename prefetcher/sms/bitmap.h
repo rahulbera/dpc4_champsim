@@ -1,5 +1,12 @@
-#ifndef BITMAP_H
-#define BITMAP_H
+//=======================================================================================//
+// File             : sms/bitmap.h
+// Author           : Rahul Bera, SAFARI Research Group (write2bera@gmail.com)
+// Date             : 19/AUG/2025
+// Description      : Implements bitmap functionality required for SMS
+//=======================================================================================//
+
+#ifndef __BITMAP_H__
+#define __BITMAP_H__
 
 #include <bitset>
 #include <stdint.h>
@@ -24,4 +31,4 @@ public:
   static Bitmap bitwise_and(Bitmap bmp1, Bitmap bmp2, uint32_t size = BITMAP_MAX_SIZE);
 };
 
-#endif /* BITMAP_H */
+#endif /* __BITMAP_H__ */

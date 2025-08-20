@@ -1,5 +1,5 @@
 //=======================================================================================//
-// File             : sms/sms_helper.h
+// File             : sms/sms.cc
 // Author           : Rahul Bera, SAFARI Research Group (write2bera@gmail.com)
 // Date             : 19/AUG/2025
 // Description      : Implements Spatial Memory Streaming prefetcher, ISCA'06

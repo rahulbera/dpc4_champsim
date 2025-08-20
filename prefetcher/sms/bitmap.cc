@@ -1,3 +1,10 @@
+//=======================================================================================//
+// File             : sms/bitmap.cc
+// Author           : Rahul Bera, SAFARI Research Group (write2bera@gmail.com)
+// Date             : 19/AUG/2025
+// Description      : Implements bitmap functionality required for SMS
+//=======================================================================================//
+
 #include "bitmap.h"
 
 #include <assert.h>
