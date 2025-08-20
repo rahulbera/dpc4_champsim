@@ -27,13 +27,13 @@ public:
       global_accuracy; // Alpha value in Section III. Equation 3
 
   // Global History Register (GHR) entries
-  uint8_t valid[MAX_GHR_ENTRY];
-  uint32_t sig[MAX_GHR_ENTRY], confidence[MAX_GHR_ENTRY], offset[MAX_GHR_ENTRY];
-  int delta[MAX_GHR_ENTRY];
+  uint8_t valid[SPP_PPF::MAX_GHR_ENTRY];
+  uint32_t sig[SPP_PPF::MAX_GHR_ENTRY], confidence[SPP_PPF::MAX_GHR_ENTRY], offset[SPP_PPF::MAX_GHR_ENTRY];
+  int delta[SPP_PPF::MAX_GHR_ENTRY];
 
   uint64_t ip_0, ip_1, ip_2, ip_3;
 
-  uint64_t page_tracker[PAGES_TRACKED];
+  uint64_t page_tracker[SPP_PPF::PAGES_TRACKED];
 
   GLOBAL_REGISTER()
   {
@@ -45,7 +45,7 @@ public:
     ip_2 = 0;
     ip_3 = 0;
 
-    for (uint32_t i = 0; i < MAX_GHR_ENTRY; i++) {
+    for (uint32_t i = 0; i < SPP_PPF::MAX_GHR_ENTRY; i++) {
       valid[i] = 0;
       sig[i] = 0;
       confidence[i] = 0;
@@ -62,10 +62,10 @@ class PERCEPTRON
 {
 public:
   // Perc Weights
-  int32_t perc_weights[PERC_ENTRIES][PERC_FEATURES];
+  int32_t perc_weights[SPP_PPF::PERC_ENTRIES][SPP_PPF::PERC_FEATURES];
 
   // CONST depths for different features
-  int32_t PERC_DEPTH[PERC_FEATURES];
+  int32_t PERC_DEPTH[SPP_PPF::PERC_FEATURES];
 
   PERCEPTRON()
   {
@@ -83,8 +83,8 @@ public:
     PERC_DEPTH[7] = 2048; // ip ^ sig_delta;
     PERC_DEPTH[8] = 128;  // confidence;
 
-    for (uint32_t i = 0; i < PERC_ENTRIES; i++) {
-      for (uint32_t j = 0; j < PERC_FEATURES; j++) {
+    for (uint32_t i = 0; i < SPP_PPF::PERC_ENTRIES; i++) {
+      for (uint32_t j = 0; j < SPP_PPF::PERC_FEATURES; j++) {
         perc_weights[i][j] = 0;
       }
     }
@@ -95,7 +95,7 @@ public:
   int32_t perc_predict(uint64_t check_addr, uint64_t ip, uint64_t ip_1, uint64_t ip_2, uint64_t ip_3, int32_t cur_delta, uint32_t last_sig, uint32_t curr_sig,
                        uint32_t confidence, uint32_t depth);
   void get_perc_index(uint64_t base_addr, uint64_t ip, uint64_t ip_1, uint64_t ip_2, uint64_t ip_3, int32_t cur_delta, uint32_t last_sig, uint32_t curr_sig,
-                      uint32_t confidence, uint32_t depth, uint64_t perc_set[PERC_FEATURES]);
+                      uint32_t confidence, uint32_t depth, uint64_t perc_set[SPP_PPF::PERC_FEATURES]);
 };
 
 class PREFETCH_FILTER
@@ -105,29 +105,31 @@ public:
   GLOBAL_REGISTER* ghr;
   PERCEPTRON* perc;
 
-  uint64_t remainder_tag[FILTER_SET], pc[FILTER_SET], pc_1[FILTER_SET], pc_2[FILTER_SET], pc_3[FILTER_SET], address[FILTER_SET];
-  bool valid[FILTER_SET], // Consider this as "prefetched"
-      useful[FILTER_SET]; // Consider this as "used"
-  int32_t delta[FILTER_SET], perc_sum[FILTER_SET];
-  uint32_t last_signature[FILTER_SET], confidence[FILTER_SET], cur_signature[FILTER_SET], la_depth[FILTER_SET];
+  uint64_t remainder_tag[SPP_PPF::FILTER_SET], pc[SPP_PPF::FILTER_SET], pc_1[SPP_PPF::FILTER_SET], pc_2[SPP_PPF::FILTER_SET], pc_3[SPP_PPF::FILTER_SET],
+      address[SPP_PPF::FILTER_SET];
+  bool valid[SPP_PPF::FILTER_SET], // Consider this as "prefetched"
+      useful[SPP_PPF::FILTER_SET]; // Consider this as "used"
+  int32_t delta[SPP_PPF::FILTER_SET], perc_sum[SPP_PPF::FILTER_SET];
+  uint32_t last_signature[SPP_PPF::FILTER_SET], confidence[SPP_PPF::FILTER_SET], cur_signature[SPP_PPF::FILTER_SET], la_depth[SPP_PPF::FILTER_SET];
 
-  uint64_t remainder_tag_reject[FILTER_SET_REJ], pc_reject[FILTER_SET_REJ], pc_1_reject[FILTER_SET_REJ], pc_2_reject[FILTER_SET_REJ],
-      pc_3_reject[FILTER_SET_REJ], address_reject[FILTER_SET_REJ];
-  bool valid_reject[FILTER_SET_REJ]; // Entries which the perceptron rejected
-  int32_t delta_reject[FILTER_SET_REJ], perc_sum_reject[FILTER_SET_REJ];
-  uint32_t last_signature_reject[FILTER_SET_REJ], confidence_reject[FILTER_SET_REJ], cur_signature_reject[FILTER_SET_REJ], la_depth_reject[FILTER_SET_REJ];
+  uint64_t remainder_tag_reject[SPP_PPF::FILTER_SET_REJ], pc_reject[SPP_PPF::FILTER_SET_REJ], pc_1_reject[SPP_PPF::FILTER_SET_REJ],
+      pc_2_reject[SPP_PPF::FILTER_SET_REJ], pc_3_reject[SPP_PPF::FILTER_SET_REJ], address_reject[SPP_PPF::FILTER_SET_REJ];
+  bool valid_reject[SPP_PPF::FILTER_SET_REJ]; // Entries which the perceptron rejected
+  int32_t delta_reject[SPP_PPF::FILTER_SET_REJ], perc_sum_reject[SPP_PPF::FILTER_SET_REJ];
+  uint32_t last_signature_reject[SPP_PPF::FILTER_SET_REJ], confidence_reject[SPP_PPF::FILTER_SET_REJ], cur_signature_reject[SPP_PPF::FILTER_SET_REJ],
+      la_depth_reject[SPP_PPF::FILTER_SET_REJ];
 
   PREFETCH_FILTER()
   {
     // std::cout << std::endl << "Initialize PREFETCH FILTER" << std::endl;
-    // std::cout << "FILTER_SET: " << FILTER_SET << std::endl;
+    // std::cout << "SPP_PPF::FILTER_SET: " << SPP_PPF::FILTER_SET << std::endl;
 
-    for (uint32_t set = 0; set < FILTER_SET; set++) {
+    for (uint32_t set = 0; set < SPP_PPF::FILTER_SET; set++) {
       remainder_tag[set] = 0;
       valid[set] = 0;
       useful[set] = 0;
     }
-    for (uint32_t set = 0; set < FILTER_SET_REJ; set++) {
+    for (uint32_t set = 0; set < SPP_PPF::FILTER_SET_REJ; set++) {
       valid_reject[set] = 0;
       remainder_tag_reject[set] = 0;
     }
@@ -143,19 +145,20 @@ public:
   /* cross-reference pointers */
   GLOBAL_REGISTER* ghr;
 
-  bool valid[ST_SET][ST_WAY];
-  uint32_t tag[ST_SET][ST_WAY], last_offset[ST_SET][ST_WAY], sig[ST_SET][ST_WAY], lru[ST_SET][ST_WAY];
+  bool valid[SPP_PPF::ST_SET][SPP_PPF::ST_WAY];
+  uint32_t tag[SPP_PPF::ST_SET][SPP_PPF::ST_WAY], last_offset[SPP_PPF::ST_SET][SPP_PPF::ST_WAY], sig[SPP_PPF::ST_SET][SPP_PPF::ST_WAY],
+      lru[SPP_PPF::ST_SET][SPP_PPF::ST_WAY];
 
   SIGNATURE_TABLE()
   {
     // std::cout << "Initialize SIGNATURE TABLE" << std::endl;
-    // std::cout << "ST_SET: " << ST_SET << std::endl;
-    // std::cout << "ST_WAY: " << ST_WAY << std::endl;
-    // std::cout << "ST_TAG_BIT: " << ST_TAG_BIT << std::endl;
-    // std::cout << "ST_TAG_MASK: " << std::hex << ST_TAG_MASK << std::dec << std::endl;
+    // std::cout << "SPP_PPF::ST_SET: " << SPP_PPF::ST_SET << std::endl;
+    // std::cout << "SPP_PPF::ST_WAY: " << SPP_PPF::ST_WAY << std::endl;
+    // std::cout << "SPP_PPF::ST_TAG_BIT: " << SPP_PPF::ST_TAG_BIT << std::endl;
+    // std::cout << "SPP_PPF::ST_TAG_MASK: " << std::hex << SPP_PPF::ST_TAG_MASK << std::dec << std::endl;
 
-    for (uint32_t set = 0; set < ST_SET; set++)
-      for (uint32_t way = 0; way < ST_WAY; way++) {
+    for (uint32_t set = 0; set < SPP_PPF::ST_SET; set++)
+      for (uint32_t way = 0; way < SPP_PPF::ST_WAY; way++) {
         valid[set][way] = 0;
         tag[set][way] = 0;
         last_offset[set][way] = 0;
@@ -175,20 +178,20 @@ public:
   PERCEPTRON* perc;
   PREFETCH_FILTER* filter;
 
-  int delta[PT_SET][PT_WAY];
-  uint32_t c_delta[PT_SET][PT_WAY], c_sig[PT_SET];
+  int delta[SPP_PPF::PT_SET][SPP_PPF::PT_WAY];
+  uint32_t c_delta[SPP_PPF::PT_SET][SPP_PPF::PT_WAY], c_sig[SPP_PPF::PT_SET];
 
   PATTERN_TABLE()
   {
     // std::cout << std::endl << "Initialize PATTERN TABLE" << std::endl;
-    // std::cout << "PT_SET: " << PT_SET << std::endl;
-    // std::cout << "PT_WAY: " << PT_WAY << std::endl;
+    // std::cout << "SPP_PPF::PT_SET: " << SPP_PPF::PT_SET << std::endl;
+    // std::cout << "SPP_PPF::PT_WAY: " << SPP_PPF::PT_WAY << std::endl;
     // std::cout << "SIG_DELTA_BIT: " << SIG_DELTA_BIT << std::endl;
     // std::cout << "C_SIG_BIT: " << C_SIG_BIT << std::endl;
     // std::cout << "C_DELTA_BIT: " << C_DELTA_BIT << std::endl;
 
-    for (uint32_t set = 0; set < PT_SET; set++) {
-      for (uint32_t way = 0; way < PT_WAY; way++) {
+    for (uint32_t set = 0; set < SPP_PPF::PT_SET; set++) {
+      for (uint32_t way = 0; way < SPP_PPF::PT_WAY; way++) {
         delta[set][way] = 0;
         c_delta[set][way] = 0;
       }

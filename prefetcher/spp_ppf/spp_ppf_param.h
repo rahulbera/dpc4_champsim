@@ -32,6 +32,8 @@
 #define SPP_PW(x)
 #endif
 
+namespace SPP_PPF
+{
 // Signature table parameters
 constexpr static uint32_t ST_SET = 1;
 constexpr static uint32_t ST_WAY = 256;
@@ -74,5 +76,7 @@ constexpr static int32_t PERC_THRESHOLD_HI = -5;
 constexpr static int32_t PERC_THRESHOLD_LO = -15;
 constexpr static int32_t POS_UPDT_THRESHOLD = 90;
 constexpr static int32_t NEG_UPDT_THRESHOLD = -80;
+
+} // namespace SPP_PPF
 
 #endif /* __SPP_PPF_PARAM_H__ */

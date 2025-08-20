@@ -35,14 +35,14 @@ uint64_t get_hash(uint64_t key)
 void SIGNATURE_TABLE::read_and_update_sig(uint64_t page, uint32_t page_offset, uint32_t& last_sig, uint32_t& curr_sig, int32_t& delta)
 {
 
-  uint32_t set = get_hash(page) % ST_SET, match = ST_WAY, partial_page = page & ST_TAG_MASK;
+  uint32_t set = get_hash(page) % SPP_PPF::ST_SET, match = SPP_PPF::ST_WAY, partial_page = page & SPP_PPF::ST_TAG_MASK;
   uint8_t ST_hit = 0;
   int sig_delta = 0;
 
   SPP_DP(std::cout << "[ST] " << __func__ << " page: " << hex << page << " partial_page: " << partial_page << dec << std::endl;);
 
   // Case 1: Hit
-  for (match = 0; match < ST_WAY; match++) {
+  for (match = 0; match < SPP_PPF::ST_WAY; match++) {
     if (valid[set][match] && (tag[set][match] == partial_page)) {
       last_sig = sig[set][match];
       delta = page_offset - last_offset[set][match];
@@ -50,8 +50,8 @@ void SIGNATURE_TABLE::read_and_update_sig(uint64_t page, uint32_t page_offset, u
       if (delta) {
         // Build a new sig based on 7-bit sign magnitude representation of delta
         // sig_delta = (delta < 0) ? ((((-1) * delta) & 0x3F) + 0x40) : delta;
-        sig_delta = (delta < 0) ? (((-1) * delta) + (1 << (SIG_DELTA_BIT - 1))) : delta;
-        sig[set][match] = ((last_sig << SIG_SHIFT) ^ sig_delta) & SIG_MASK;
+        sig_delta = (delta < 0) ? (((-1) * delta) + (1 << (SPP_PPF::SIG_DELTA_BIT - 1))) : delta;
+        sig[set][match] = ((last_sig << SPP_PPF::SIG_SHIFT) ^ sig_delta) & SPP_PPF::SIG_MASK;
         curr_sig = sig[set][match];
         last_offset[set][match] = page_offset;
 
@@ -68,8 +68,8 @@ void SIGNATURE_TABLE::read_and_update_sig(uint64_t page, uint32_t page_offset, u
   }
 
   // Case 2: Invalid
-  if (match == ST_WAY) {
-    for (match = 0; match < ST_WAY; match++) {
+  if (match == SPP_PPF::ST_WAY) {
+    for (match = 0; match < SPP_PPF::ST_WAY; match++) {
       if (valid[set][match] == 0) {
         valid[set][match] = 1;
         tag[set][match] = partial_page;
@@ -87,9 +87,9 @@ void SIGNATURE_TABLE::read_and_update_sig(uint64_t page, uint32_t page_offset, u
   }
 
   // Case 3: Miss
-  if (match == ST_WAY) {
-    for (match = 0; match < ST_WAY; match++) {
-      if (lru[set][match] == ST_WAY - 1) { // Find replacement victim
+  if (match == SPP_PPF::ST_WAY) {
+    for (match = 0; match < SPP_PPF::ST_WAY; match++) {
+      if (lru[set][match] == SPP_PPF::ST_WAY - 1) { // Find replacement victim
         tag[set][match] = partial_page;
         sig[set][match] = 0;
         curr_sig = sig[set][match];
@@ -105,7 +105,7 @@ void SIGNATURE_TABLE::read_and_update_sig(uint64_t page, uint32_t page_offset, u
 
 #ifdef SPP_SANITY_CHECK
     // Assertion
-    if (match == ST_WAY) {
+    if (match == SPP_PPF::ST_WAY) {
       std::cout << "[ST] Cannot find a replacement victim!" << std::endl;
       assert(0);
     }
@@ -115,22 +115,22 @@ void SIGNATURE_TABLE::read_and_update_sig(uint64_t page, uint32_t page_offset, u
 #ifdef GHR_ON
   if (ST_hit == 0) {
     uint32_t GHR_found = ghr->check_entry(page_offset);
-    if (GHR_found < MAX_GHR_ENTRY) {
-      sig_delta = (ghr->delta[GHR_found] < 0) ? (((-1) * ghr->delta[GHR_found]) + (1 << (SIG_DELTA_BIT - 1))) : ghr->delta[GHR_found];
-      sig[set][match] = ((ghr->sig[GHR_found] << SIG_SHIFT) ^ sig_delta) & SIG_MASK;
+    if (GHR_found < SPP_PPF::MAX_GHR_ENTRY) {
+      sig_delta = (ghr->delta[GHR_found] < 0) ? (((-1) * ghr->delta[GHR_found]) + (1 << (SPP_PPF::SIG_DELTA_BIT - 1))) : ghr->delta[GHR_found];
+      sig[set][match] = ((ghr->sig[GHR_found] << SPP_PPF::SIG_SHIFT) ^ sig_delta) & SPP_PPF::SIG_MASK;
       curr_sig = sig[set][match];
     }
   }
 #endif
 
   // Update LRU
-  for (uint32_t way = 0; way < ST_WAY; way++) {
+  for (uint32_t way = 0; way < SPP_PPF::ST_WAY; way++) {
     if (lru[set][way] < lru[set][match]) {
       lru[set][way]++;
 
 #ifdef SPP_SANITY_CHECK
       // Assertion
-      if (lru[set][way] >= ST_WAY) {
+      if (lru[set][way] >= SPP_PPF::ST_WAY) {
         std::cout << "[ST] LRU value is wrong! set: " << set << " way: " << way << " lru: " << lru[set][way] << std::endl;
         assert(0);
       }
@@ -143,15 +143,15 @@ void SIGNATURE_TABLE::read_and_update_sig(uint64_t page, uint32_t page_offset, u
 void PATTERN_TABLE::update_pattern(uint32_t last_sig, int curr_delta)
 {
   // Update (sig, delta) correlation
-  uint32_t set = get_hash(last_sig) % PT_SET, match = 0;
+  uint32_t set = get_hash(last_sig) % SPP_PPF::PT_SET, match = 0;
 
   // Case 1: Hit
-  for (match = 0; match < PT_WAY; match++) {
+  for (match = 0; match < SPP_PPF::PT_WAY; match++) {
     if (delta[set][match] == curr_delta) {
       c_delta[set][match]++;
       c_sig[set]++;
-      if (c_sig[set] > C_SIG_MAX) {
-        for (uint32_t way = 0; way < PT_WAY; way++)
+      if (c_sig[set] > SPP_PPF::C_SIG_MAX) {
+        for (uint32_t way = 0; way < SPP_PPF::PT_WAY; way++)
           c_delta[set][way] >>= 1;
         c_sig[set] >>= 1;
       }
@@ -164,10 +164,10 @@ void PATTERN_TABLE::update_pattern(uint32_t last_sig, int curr_delta)
   }
 
   // Case 2: Miss
-  if (match == PT_WAY) {
-    uint32_t victim_way = PT_WAY, min_counter = C_SIG_MAX;
+  if (match == SPP_PPF::PT_WAY) {
+    uint32_t victim_way = SPP_PPF::PT_WAY, min_counter = SPP_PPF::C_SIG_MAX;
 
-    for (match = 0; match < PT_WAY; match++) {
+    for (match = 0; match < SPP_PPF::PT_WAY; match++) {
       if (c_delta[set][match] < min_counter) { // Select an entry with the minimum c_delta
         victim_way = match;
         min_counter = c_delta[set][match];
@@ -177,8 +177,8 @@ void PATTERN_TABLE::update_pattern(uint32_t last_sig, int curr_delta)
     delta[set][victim_way] = curr_delta;
     c_delta[set][victim_way] = 0;
     c_sig[set]++;
-    if (c_sig[set] > C_SIG_MAX) {
-      for (uint32_t way = 0; way < PT_WAY; way++)
+    if (c_sig[set] > SPP_PPF::C_SIG_MAX) {
+      for (uint32_t way = 0; way < SPP_PPF::PT_WAY; way++)
         c_delta[set][way] >>= 1;
       c_sig[set] >>= 1;
     }
@@ -188,7 +188,7 @@ void PATTERN_TABLE::update_pattern(uint32_t last_sig, int curr_delta)
 
 #ifdef SPP_SANITY_CHECK
     // Assertion
-    if (victim_way == PT_WAY) {
+    if (victim_way == SPP_PPF::PT_WAY) {
       std::cout << "[PT] Cannot find a replacement victim!" << std::endl;
       assert(0);
     }
@@ -202,19 +202,19 @@ void PATTERN_TABLE::read_pattern(uint32_t curr_sig, int* delta_q, uint32_t* conf
                                  std::size_t mshr_occupancy, std::size_t mshr_size)
 {
   // Update (sig, delta) correlation
-  uint32_t set = get_hash(curr_sig) % PT_SET, local_conf = 0, pf_conf = 0, max_conf = 0;
+  uint32_t set = get_hash(curr_sig) % SPP_PPF::PT_SET, local_conf = 0, pf_conf = 0, max_conf = 0;
 
   bool found_candidate = false;
 
   if (c_sig[set]) {
-    for (uint32_t way = 0; way < PT_WAY; way++) {
+    for (uint32_t way = 0; way < SPP_PPF::PT_WAY; way++) {
       local_conf = (100 * c_delta[set][way]) / c_sig[set];
       pf_conf = depth ? (uint32_t)(ghr->global_accuracy * c_delta[set][way] / c_sig[set] * lookahead_conf / 100) : local_conf;
 
       int32_t perc_sum =
           perc->perc_predict(train_addr, curr_ip, ghr->ip_1, ghr->ip_2, ghr->ip_3, train_delta + delta[set][way], last_sig, curr_sig, pf_conf, depth);
-      bool do_pf = (perc_sum >= PERC_THRESHOLD_LO) ? 1 : 0;
-      bool fill_l2 = (perc_sum >= PERC_THRESHOLD_HI) ? 1 : 0;
+      bool do_pf = (perc_sum >= SPP_PPF::PERC_THRESHOLD_LO) ? 1 : 0;
+      bool fill_l2 = (perc_sum >= SPP_PPF::PERC_THRESHOLD_HI) ? 1 : 0;
 
       if (fill_l2 && (mshr_occupancy >= mshr_size || pq_occupancy >= pq_size))
         continue;
@@ -246,8 +246,8 @@ void PATTERN_TABLE::read_pattern(uint32_t curr_sig, int* delta_q, uint32_t* conf
                std::cout << " conf: " << local_conf << " pf_q_tail: " << (pf_q_tail) << " depth: " << depth << std::endl;);
       }
       // Recording Perc negatives
-      if (pf_conf && pf_q_tail < mshr_size && (perc_sum < PERC_THRESHOLD_HI)) {
-        // Note: Using PERC_THRESHOLD_HI as the decising factor for negative case
+      if (pf_conf && pf_q_tail < mshr_size && (perc_sum < SPP_PPF::PERC_THRESHOLD_HI)) {
+        // Note: Using SPP_PPF::PERC_THRESHOLD_HI as the decising factor for negative case
         // Because 'trueness' of a prefetch is decisded based on the feedback from L2C
         // So even though LLC prefetches go through, they are treated as false wrt L2C in this case
         uint64_t pf_addr = (base_addr & ~(BLOCK_SIZE - 1)) + (delta[set][way] << LOG2_BLOCK_SIZE);
@@ -272,10 +272,11 @@ bool PREFETCH_FILTER::check(uint64_t check_addr, uint64_t base_addr, uint64_t ip
   uint64_t cache_line = check_addr >> LOG2_BLOCK_SIZE, hash = get_hash(cache_line);
 
   // MAIN FILTER
-  uint64_t quotient = (hash >> REMAINDER_BIT) & ((1 << QUOTIENT_BIT) - 1), remainder = hash % (1 << REMAINDER_BIT);
+  uint64_t quotient = (hash >> SPP_PPF::REMAINDER_BIT) & ((1 << SPP_PPF::QUOTIENT_BIT) - 1), remainder = hash % (1 << SPP_PPF::REMAINDER_BIT);
 
   // REJECT FILTER
-  uint64_t quotient_reject = (hash >> REMAINDER_BIT_REJ) & ((1 << QUOTIENT_BIT_REJ) - 1), remainder_reject = hash % (1 << REMAINDER_BIT_REJ);
+  uint64_t quotient_reject = (hash >> SPP_PPF::REMAINDER_BIT_REJ) & ((1 << SPP_PPF::QUOTIENT_BIT_REJ) - 1),
+           remainder_reject = hash % (1 << SPP_PPF::REMAINDER_BIT_REJ);
 
   SPP_DP(std::cout << "[FILTER] check_addr: " << hex << check_addr << " check_cache_line: " << (check_addr >> LOG2_BLOCK_SIZE);
          std::cout << " request type: " << filter_request;
@@ -443,12 +444,12 @@ void GLOBAL_REGISTER::update_entry(uint32_t pf_sig, uint32_t pf_confidence, uint
 {
   // NOTE: GHR implementation is slightly different from the original paper
   // Instead of matching (last_offset + delta), GHR simply stores and matches the pf_offset
-  uint32_t min_conf = 100, victim_way = MAX_GHR_ENTRY;
+  uint32_t min_conf = 100, victim_way = SPP_PPF::MAX_GHR_ENTRY;
 
   SPP_DP(std::cout << "[GHR] Crossing the page boundary pf_sig: " << hex << pf_sig << dec;
          std::cout << " confidence: " << pf_confidence << " pf_offset: " << pf_offset << " pf_delta: " << pf_delta << std::endl;);
 
-  for (uint32_t i = 0; i < MAX_GHR_ENTRY; i++) {
+  for (uint32_t i = 0; i < SPP_PPF::MAX_GHR_ENTRY; i++) {
     // if (sig[i] == pf_sig) { // TODO: Which one is better and consistent?
     //  If GHR already holds the same pf_sig, update the GHR entry with the latest info
     if (valid[i] && (offset[i] == pf_offset)) {
@@ -472,7 +473,7 @@ void GLOBAL_REGISTER::update_entry(uint32_t pf_sig, uint32_t pf_confidence, uint
   }
 
   // Assertion
-  if (victim_way >= MAX_GHR_ENTRY) {
+  if (victim_way >= SPP_PPF::MAX_GHR_ENTRY) {
     std::cout << "[GHR] Cannot find a replacement victim!" << std::endl;
     assert(0);
   }
@@ -489,9 +490,9 @@ void GLOBAL_REGISTER::update_entry(uint32_t pf_sig, uint32_t pf_confidence, uint
 
 uint32_t GLOBAL_REGISTER::check_entry(uint32_t page_offset)
 {
-  uint32_t max_conf = 0, max_conf_way = MAX_GHR_ENTRY;
+  uint32_t max_conf = 0, max_conf_way = SPP_PPF::MAX_GHR_ENTRY;
 
-  for (uint32_t i = 0; i < MAX_GHR_ENTRY; i++) {
+  for (uint32_t i = 0; i < SPP_PPF::MAX_GHR_ENTRY; i++) {
     if ((offset[i] == page_offset) && (max_conf < confidence[i])) {
       max_conf = confidence[i];
       max_conf_way = i;
@@ -502,13 +503,13 @@ uint32_t GLOBAL_REGISTER::check_entry(uint32_t page_offset)
 }
 
 void PERCEPTRON::get_perc_index(uint64_t base_addr, uint64_t ip, uint64_t ip_1, uint64_t ip_2, uint64_t ip_3, int32_t cur_delta, uint32_t last_sig,
-                                uint32_t curr_sig, uint32_t confidence, uint32_t depth, uint64_t perc_set[PERC_FEATURES])
+                                uint32_t curr_sig, uint32_t confidence, uint32_t depth, uint64_t perc_set[SPP_PPF::PERC_FEATURES])
 {
   // Returns the imdexes for the perceptron tables
   uint64_t cache_line = base_addr >> LOG2_BLOCK_SIZE, page_addr = base_addr >> LOG2_PAGE_SIZE;
 
-  int sig_delta = (cur_delta < 0) ? (((-1) * cur_delta) + (1 << (SIG_DELTA_BIT - 1))) : cur_delta;
-  uint64_t pre_hash[PERC_FEATURES];
+  int sig_delta = (cur_delta < 0) ? (((-1) * cur_delta) + (1 << (SPP_PPF::SIG_DELTA_BIT - 1))) : cur_delta;
+  uint64_t pre_hash[SPP_PPF::PERC_FEATURES];
 
   pre_hash[0] = base_addr;
   pre_hash[1] = cache_line;
@@ -520,7 +521,7 @@ void PERCEPTRON::get_perc_index(uint64_t base_addr, uint64_t ip, uint64_t ip_1, 
   pre_hash[7] = ip ^ sig_delta;
   pre_hash[8] = confidence;
 
-  for (uint32_t i = 0; i < PERC_FEATURES; i++) {
+  for (uint32_t i = 0; i < SPP_PPF::PERC_FEATURES; i++) {
     perc_set[i] = (pre_hash[i]) % PERC_DEPTH[i]; // Variable depths
     SPP_DP(std::cout << "  Perceptron Set Index#: " << i << " = " << perc_set[i];);
   }
@@ -530,22 +531,22 @@ void PERCEPTRON::get_perc_index(uint64_t base_addr, uint64_t ip, uint64_t ip_1, 
 int32_t PERCEPTRON::perc_predict(uint64_t base_addr, uint64_t ip, uint64_t ip_1, uint64_t ip_2, uint64_t ip_3, int32_t cur_delta, uint32_t last_sig,
                                  uint32_t curr_sig, uint32_t confidence, uint32_t depth)
 {
-  SPP_DP(int sig_delta = (cur_delta < 0) ? (((-1) * cur_delta) + (1 << (SIG_DELTA_BIT - 1))) : cur_delta;
+  SPP_DP(int sig_delta = (cur_delta < 0) ? (((-1) * cur_delta) + (1 << (SPP_PPF::SIG_DELTA_BIT - 1))) : cur_delta;
          std::cout << "[PERC_PRED] Current IP: " << ip << "  and  Memory Adress: " << hex << base_addr << std::endl;
          std::cout << " Last Sig: " << last_sig << " Curr Sig: " << curr_sig << dec << std::endl;
          std::cout << " Cur Delta: " << cur_delta << " Sign Delta: " << sig_delta << " Confidence: " << confidence << std::endl; std::cout << " ";);
 
-  uint64_t perc_set[PERC_FEATURES];
+  uint64_t perc_set[SPP_PPF::PERC_FEATURES];
   // Get the indexes in perc_set[]
   get_perc_index(base_addr, ip, ip_1, ip_2, ip_3, cur_delta, last_sig, curr_sig, confidence, depth, perc_set);
 
   int32_t sum = 0;
-  for (uint32_t i = 0; i < PERC_FEATURES; i++) {
+  for (uint32_t i = 0; i < SPP_PPF::PERC_FEATURES; i++) {
     sum += perc_weights[perc_set[i]][i];
     // Calculate Sum
   }
-  SPP_DP(std::cout << " Sum of perceptrons: " << sum
-                   << " Prediction made: " << ((sum >= PERC_THRESHOLD_LO) ? ((sum >= PERC_THRESHOLD_HI) ? FILL_L2 : FILL_LLC) : 0) << std::endl;);
+  SPP_DP(std::cout << " Sum of perceptrons: " << sum << " Prediction made: "
+                   << ((sum >= SPP_PPF::PERC_THRESHOLD_LO) ? ((sum >= SPP_PPF::PERC_THRESHOLD_HI) ? FILL_L2 : FILL_LLC) : 0) << std::endl;);
   // Return the sum
   return sum;
 }
@@ -553,14 +554,14 @@ int32_t PERCEPTRON::perc_predict(uint64_t base_addr, uint64_t ip, uint64_t ip_1,
 void PERCEPTRON::perc_update(uint64_t base_addr, uint64_t ip, uint64_t ip_1, uint64_t ip_2, uint64_t ip_3, int32_t cur_delta, uint32_t last_sig,
                              uint32_t curr_sig, uint32_t confidence, uint32_t depth, bool direction, int32_t perc_sum)
 {
-  SPP_DP(int sig_delta = (cur_delta < 0) ? (((-1) * cur_delta) + (1 << (SIG_DELTA_BIT - 1))) : cur_delta;
+  SPP_DP(int sig_delta = (cur_delta < 0) ? (((-1) * cur_delta) + (1 << (SPP_PPF::SIG_DELTA_BIT - 1))) : cur_delta;
          std::cout << "[PERC_UPD] (Recorded) IP: " << ip << "  and  Memory Adress: " << hex << base_addr << std::endl;
          std::cout << " Last Sig: " << last_sig << " Curr Sig: " << curr_sig << dec << std::endl;
          std::cout << " Cur Delta: " << cur_delta << " Sign Delta: " << sig_delta << " Confidence: " << confidence << " Update Direction: " << direction
                    << std::endl;
          std::cout << " ";);
 
-  uint64_t perc_set[PERC_FEATURES];
+  uint64_t perc_set[SPP_PPF::PERC_FEATURES];
   // Get the perceptron indexes
   get_perc_index(base_addr, ip, ip_1, ip_2, ip_3, cur_delta, last_sig, curr_sig, confidence, depth, perc_set);
 
@@ -570,36 +571,36 @@ void PERCEPTRON::perc_update(uint64_t base_addr, uint64_t ip, uint64_t ip_1, uin
 
   if (!direction) { // direction = 1 means the sum was in the correct direction, 0 means it was in the wrong direction
     // Prediction wrong
-    for (uint32_t i = 0; i < PERC_FEATURES; i++) {
-      if (sum >= PERC_THRESHOLD_HI) {
+    for (uint32_t i = 0; i < SPP_PPF::PERC_FEATURES; i++) {
+      if (sum >= SPP_PPF::PERC_THRESHOLD_HI) {
         // Prediction was to prefectch -- so decrement counters
-        if (perc_weights[perc_set[i]][i] > -1 * (PERC_COUNTER_MAX + 1))
+        if (perc_weights[perc_set[i]][i] > -1 * (SPP_PPF::PERC_COUNTER_MAX + 1))
           perc_weights[perc_set[i]][i]--;
       }
-      if (sum < PERC_THRESHOLD_HI) {
+      if (sum < SPP_PPF::PERC_THRESHOLD_HI) {
         // Prediction was to not prefetch -- so increment counters
-        if (perc_weights[perc_set[i]][i] < PERC_COUNTER_MAX)
+        if (perc_weights[perc_set[i]][i] < SPP_PPF::PERC_COUNTER_MAX)
           perc_weights[perc_set[i]][i]++;
       }
     }
-    SPP_DP(int differential = (sum >= PERC_THRESHOLD_HI) ? -1 : 1; std::cout << " Direction is: " << direction << " and sum is:" << sum;
+    SPP_DP(int differential = (sum >= SPP_PPF::PERC_THRESHOLD_HI) ? -1 : 1; std::cout << " Direction is: " << direction << " and sum is:" << sum;
            std::cout << " Overall Differential: " << differential << std::endl;);
   }
-  if (direction && sum > NEG_UPDT_THRESHOLD && sum < POS_UPDT_THRESHOLD) {
+  if (direction && sum > SPP_PPF::NEG_UPDT_THRESHOLD && sum < SPP_PPF::POS_UPDT_THRESHOLD) {
     // Prediction correct but sum not 'saturated' enough
-    for (uint32_t i = 0; i < PERC_FEATURES; i++) {
-      if (sum >= PERC_THRESHOLD_HI) {
+    for (uint32_t i = 0; i < SPP_PPF::PERC_FEATURES; i++) {
+      if (sum >= SPP_PPF::PERC_THRESHOLD_HI) {
         // Prediction was to prefetch -- so increment counters
-        if (perc_weights[perc_set[i]][i] < PERC_COUNTER_MAX)
+        if (perc_weights[perc_set[i]][i] < SPP_PPF::PERC_COUNTER_MAX)
           perc_weights[perc_set[i]][i]++;
       }
-      if (sum < PERC_THRESHOLD_HI) {
+      if (sum < SPP_PPF::PERC_THRESHOLD_HI) {
         // Prediction was to not prefetch -- so decrement counters
-        if (perc_weights[perc_set[i]][i] > -1 * (PERC_COUNTER_MAX + 1))
+        if (perc_weights[perc_set[i]][i] > -1 * (SPP_PPF::PERC_COUNTER_MAX + 1))
           perc_weights[perc_set[i]][i]--;
       }
     }
-    SPP_DP(int differential = 0; if (sum >= PERC_THRESHOLD_HI) differential = 1; if (sum < PERC_THRESHOLD_HI) differential = -1;
+    SPP_DP(int differential = 0; if (sum >= SPP_PPF::PERC_THRESHOLD_HI) differential = 1; if (sum < SPP_PPF::PERC_THRESHOLD_HI) differential = -1;
            std::cout << " Direction is: " << direction << " and sum is:" << sum; std::cout << " Overall Differential: " << differential << std::endl;);
   }
 }

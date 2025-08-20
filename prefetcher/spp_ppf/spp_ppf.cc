@@ -49,14 +49,14 @@ uint32_t spp_ppf::prefetcher_cache_operate(champsim::address address, champsim::
   confidence_q[0] = 100;
   GHR.global_accuracy = GHR.pf_issued ? ((100 * GHR.pf_useful) / GHR.pf_issued) : 0;
 
-  for (int i = PAGES_TRACKED - 1; i > 0; i--) { // N down to 1
+  for (int i = SPP_PPF::PAGES_TRACKED - 1; i > 0; i--) { // N down to 1
     GHR.page_tracker[i] = GHR.page_tracker[i - 1];
   }
   GHR.page_tracker[0] = page;
 
   int distinct_pages = 0;
   uint8_t num_pf = 0;
-  for (uint32_t i = 0; i < PAGES_TRACKED; i++) {
+  for (uint32_t i = 0; i < SPP_PPF::PAGES_TRACKED; i++) {
     uint32_t j;
     for (j = 0; j < i; j++) {
       if (GHR.page_tracker[i] == GHR.page_tracker[j])
@@ -101,7 +101,7 @@ uint32_t spp_ppf::prefetcher_cache_operate(champsim::address address, champsim::
 #ifdef LOOKAHEAD_ON
   do {
 #endif
-    uint32_t lookahead_way = PT_WAY;
+    uint32_t lookahead_way = SPP_PPF::PT_WAY;
 
     train_addr = addr;
     train_delta = prev_delta;
@@ -120,7 +120,7 @@ uint32_t spp_ppf::prefetcher_cache_operate(champsim::address address, champsim::
       SPP_DP(cout << "[ChampSim] State of features: \nTrain addr: " << train_addr << "\tCurr IP: " << curr_ip << "\tIP_1: " << GHR.ip_1
                   << "\tIP_2: " << GHR.ip_2 << "\tIP_3: " << GHR.ip_3 << "\tDelta: " << train_delta + delta_q[i] << "\t:LastSig " << last_sig << "\t:CurrSig "
                   << curr_sig << "\t:Conf " << confidence_q[i] << "\t:Depth " << depth << "\tSUM: " << perc_sum << endl;);
-      FILTER_REQUEST fill_level = (perc_sum >= PERC_THRESHOLD_HI) ? SPP_L2C_PREFETCH : SPP_LLC_PREFETCH;
+      FILTER_REQUEST fill_level = (perc_sum >= SPP_PPF::PERC_THRESHOLD_HI) ? SPP_L2C_PREFETCH : SPP_LLC_PREFETCH;
 
       if ((addr & ~(PAGE_SIZE - 1)) == (pf_addr & ~(PAGE_SIZE - 1))) { // Prefetch request is in the same physical page
 
@@ -138,7 +138,7 @@ uint32_t spp_ppf::prefetcher_cache_operate(champsim::address address, champsim::
             // FILTER.valid_reject[quotient] = 0;
             if (fill_level == SPP_L2C_PREFETCH) {
               GHR.pf_issued++;
-              if (GHR.pf_issued > GLOBAL_COUNTER_MAX) {
+              if (GHR.pf_issued > SPP_PPF::GLOBAL_COUNTER_MAX) {
                 GHR.pf_issued >>= 1;
                 GHR.pf_useful >>= 1;
               }
@@ -162,15 +162,16 @@ uint32_t spp_ppf::prefetcher_cache_operate(champsim::address address, champsim::
     }
 
     // Update base_addr and curr_sig
-    if (lookahead_way < PT_WAY) {
-      uint32_t set = get_hash(curr_sig) % PT_SET;
+    if (lookahead_way < SPP_PPF::PT_WAY) {
+      uint32_t set = get_hash(curr_sig) % SPP_PPF::PT_SET;
       base_addr += (PT.delta[set][lookahead_way] << LOG2_BLOCK_SIZE);
       prev_delta += PT.delta[set][lookahead_way];
 
       // PT.delta uses a 7-bit sign magnitude representation to generate sig_delta
       // int sig_delta = (PT.delta[set][lookahead_way] < 0) ? ((((-1) * PT.delta[set][lookahead_way]) & 0x3F) + 0x40) : PT.delta[set][lookahead_way];
-      int sig_delta = (PT.delta[set][lookahead_way] < 0) ? (((-1) * PT.delta[set][lookahead_way]) + (1 << (SIG_DELTA_BIT - 1))) : PT.delta[set][lookahead_way];
-      curr_sig = ((curr_sig << SIG_SHIFT) ^ sig_delta) & SIG_MASK;
+      int sig_delta =
+          (PT.delta[set][lookahead_way] < 0) ? (((-1) * PT.delta[set][lookahead_way]) + (1 << (SPP_PPF::SIG_DELTA_BIT - 1))) : PT.delta[set][lookahead_way];
+      curr_sig = ((curr_sig << SPP_PPF::SIG_SHIFT) ^ sig_delta) & SPP_PPF::SIG_MASK;
     }
 
     SPP_DP(cout << "Looping curr_sig: " << hex << curr_sig << " base_addr: " << base_addr << dec;
