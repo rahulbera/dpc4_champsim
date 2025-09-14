@@ -16,7 +16,7 @@ void pythia::prefetcher_initialize()
 
   last_evicted_tracker = NULL;
   brain_featurewise = new LearningEngineFeaturewise(PYTHIA::scooby_alpha, PYTHIA::scooby_gamma, PYTHIA::scooby_epsilon, PYTHIA::scooby_max_actions,
-                                                    PYTHIA::scooby_seed, PYTHIA::scooby_policy, PYTHIA::scooby_learning_type, PYTHIA::scooby_brain_zero_init);
+                                                    PYTHIA::scooby_seed, PYTHIA::scooby_policy, PYTHIA::scooby_learning_type);
   bw_level = 0;
   core_ipc = 0;
   acc_level = 0;

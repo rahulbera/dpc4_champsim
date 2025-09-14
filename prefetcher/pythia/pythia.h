@@ -26,9 +26,7 @@ private:
   uint8_t core_ipc;
   uint32_t acc_level;
 
-  /* Action array
-   * Basically a set of deltas to evaluate
-   * Similar to the concept of BOP */
+  /* Action array: basically a set of deltas to evaluate */
   std::vector<int32_t> Actions;
 
   /* for managing stats */
@@ -57,6 +55,8 @@ private:
   bool is_high_bw();
 
 public:
+  using champsim::modules::prefetcher::prefetcher;
+
   // interface to the rest of ChampSim
   void prefetcher_initialize();
   uint32_t prefetcher_cache_operate(champsim::address addr, champsim::address ip, uint8_t cache_hit, bool useful_prefetch, access_type type,

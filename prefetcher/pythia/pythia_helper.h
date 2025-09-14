@@ -24,7 +24,6 @@ typedef enum {
   correct_untimely,
   correct_timely,
   out_of_bounds,
-  tracker_hit,
 
   num_rewards
 } RewardType;

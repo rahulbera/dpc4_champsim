@@ -37,17 +37,11 @@ private:
   float m_alpha, m_gamma;
   uint32_t m_actions;
   float m_init_value;
-  float m_weight;
-  float m_weight_gradient;
   uint32_t m_hash_type;
 
   uint32_t m_num_tilings, m_num_tiles;
   float*** m_qtable;
   bool m_enable_tiling_offset;
-
-  bool m_action_fallback;
-
-  float min_weight, max_weight;
 
 private:
   float getQ(uint32_t tiling, uint32_t tile_index, uint32_t action);
@@ -78,30 +72,13 @@ private:
   uint32_t process_Delta_Path_PC(uint32_t tiling, uint32_t delta_path, uint64_t pc);
 
 public:
-  FeatureKnowledge(FeatureType feature_type, float alpha, float gamma, uint32_t actions, float weight, float weight_gradient, uint32_t num_tilings,
-                   uint32_t num_tiles, bool zero_init, uint32_t hash_type, int32_t enable_tiling_offset, bool enable_action_fallback);
+  FeatureKnowledge(FeatureType feature_type, float alpha, float gamma, uint32_t actions, uint32_t num_tilings, uint32_t num_tiles, uint32_t hash_type,
+                   int32_t enable_tiling_offset);
   ~FeatureKnowledge();
   float retrieveQ(State* state, uint32_t action_index);
   void updateQ(State* state1, uint32_t action1, int32_t reward, State* state2, uint32_t action2);
   static std::string getFeatureString(FeatureType type);
   uint32_t getMaxAction(State* state); /* Called by featurewise engine only to get a consensus from all the features */
-
-  /* weight manipulation */
-  inline void increase_weight()
-  {
-    m_weight = m_weight + m_weight_gradient * m_weight;
-    if (m_weight < min_weight)
-      min_weight = m_weight;
-  }
-  inline void decrease_weight()
-  {
-    m_weight = m_weight - m_weight_gradient * m_weight;
-    if (m_weight > max_weight)
-      max_weight = m_weight;
-  }
-  inline float get_weight() { return m_weight; }
-  inline float get_min_weight() { return min_weight; }
-  inline float get_max_weight() { return max_weight; }
 };
 
 #endif /* FEATURE_KNOWLEDGE */

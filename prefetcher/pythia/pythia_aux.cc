@@ -17,8 +17,6 @@ void pythia::init_knobs()
   std::copy(PYTHIA::scooby_actions.begin(), PYTHIA::scooby_actions.end(), Actions.begin());
   assert(Actions.size() == PYTHIA::scooby_max_actions);
   assert(Actions.size() <= MAX_ACTIONS);
-  assert(PYTHIA::scooby_pref_degree >= 1 && (PYTHIA::scooby_pref_degree == 1 || !PYTHIA::scooby_enable_dyn_degree));
-  assert(PYTHIA::scooby_max_to_avg_q_thresholds.size() == PYTHIA::scooby_dyn_degrees.size() - 1);
   assert(PYTHIA::scooby_last_pref_offset_conf_thresholds.size() == PYTHIA::scooby_dyn_degrees_type2.size() - 1);
 }
 
@@ -68,12 +66,12 @@ uint32_t pythia::predict(uint64_t base_address, uint64_t page, uint32_t offset, 
 
   /* query learning engine to get the next prediction */
   uint32_t action_index = 0;
-  uint32_t pref_degree = PYTHIA::scooby_pref_degree;
+  uint32_t pref_degree = 1;
   std::vector<bool> consensus_vec; // only required for featurewise engine
   float max_to_avg_q_ratio = 1.0;
 
   // take an action
-  action_index = brain_featurewise->chooseAction(state, max_to_avg_q_ratio, consensus_vec);
+  action_index = brain_featurewise->chooseAction(state);
   assert(action_index < PYTHIA::scooby_max_actions);
 
   // select a prefetch degree
@@ -106,13 +104,6 @@ uint32_t pythia::predict(uint64_t base_address, uint64_t page, uint32_t offset, 
       } else {
         MYLOG("pred_off %d tracker_hit", predicted_offset);
         stats.predict.pred_hit[action_index]++;
-        if (PYTHIA::scooby_enable_reward_tracker_hit) {
-          addr = 0xdeadbeef;
-          track(addr, state, action_index, &ptentry);
-          assert(ptentry);
-          assign_reward(ptentry, RewardType::tracker_hit);
-          ptentry->consensus_vec = consensus_vec;
-        }
       }
       stats.predict.action_dist[action_index]++;
     } else {
@@ -161,7 +152,7 @@ bool pythia::track(uint64_t address, State* state, uint32_t action_index, Scooby
     new_addr = false;
   }
 
-  if (!new_addr && address != 0xdeadbeef && !PYTHIA::scooby_enable_track_multiple) {
+  if (!new_addr && address != 0xdeadbeef) {
     stats.track.same_address++;
     tracker = NULL;
     return new_addr;
@@ -372,9 +363,6 @@ void pythia::assign_reward(Scooby_PTEntry* ptentry, RewardType type)
   case RewardType::out_of_bounds:
     stats.reward.out_of_bounds++;
     break;
-  case RewardType::tracker_hit:
-    stats.reward.tracker_hit++;
-    break;
   default:
     assert(false);
   }
@@ -407,8 +395,6 @@ int32_t pythia::compute_reward(Scooby_PTEntry* ptentry, RewardType type)
     reward = high_bw ? PYTHIA::scooby_reward_hbw_none : PYTHIA::scooby_reward_none;
   } else if (type == RewardType::out_of_bounds) {
     reward = high_bw ? PYTHIA::scooby_reward_hbw_out_of_bounds : PYTHIA::scooby_reward_out_of_bounds;
-  } else if (type == RewardType::tracker_hit) {
-    reward = high_bw ? PYTHIA::scooby_reward_hbw_tracker_hit : PYTHIA::scooby_reward_tracker_hit;
   } else {
     std::cout << "Invalid reward type found " << type << std::endl;
     assert(false);
@@ -439,7 +425,7 @@ void pythia::train(Scooby_PTEntry* curr_evicted, Scooby_PTEntry* last_evicted)
 
   /* RL engine training */
   brain_featurewise->learn(last_evicted->state, last_evicted->action_index, last_evicted->reward, curr_evicted->state, curr_evicted->action_index,
-                           last_evicted->consensus_vec, last_evicted->reward_type);
+                           last_evicted->reward_type);
 
   MYLOG("train done");
 }
