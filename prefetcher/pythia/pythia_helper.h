@@ -163,10 +163,10 @@ typedef struct _stats {
   struct {
     uint64_t called;
     uint64_t out_of_bounds;
-    std::vector<uint64_t> action_dist;
-    std::vector<uint64_t> issue_dist;
-    std::vector<uint64_t> pred_hit;
-    std::vector<uint64_t> out_of_bounds_dist;
+    uint64_t action_dist[MAX_ACTIONS];
+    uint64_t issue_dist[MAX_ACTIONS];
+    uint64_t pred_hit[MAX_ACTIONS];
+    uint64_t out_of_bounds_dist[MAX_ACTIONS];
     uint64_t predicted;
     uint64_t multi_deg;
     uint64_t multi_deg_called;

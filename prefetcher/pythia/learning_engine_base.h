@@ -12,8 +12,6 @@
 #include <cstdint>
 #include <string>
 
-#define MAX_ACTIONS 64
-
 enum Policy {
   InvalidPolicy = 0,
   EGreedy,

@@ -67,7 +67,6 @@ static const uint32_t scooby_seed = 200;
 static const std::string scooby_policy = std::string("EGreedy");
 static const std::string scooby_learning_type = std::string("SARSA");
 static const std::vector<int32_t> scooby_actions = {1, 3, 4, 5, 10, 11, 12, 22, 23, 30, 32, -1, -3, -6, 0};
-static const uint32_t scooby_max_actions = 128;
 static const uint32_t scooby_pt_size = 256;
 static const uint32_t scooby_st_size = 64;
 static const uint32_t scooby_max_pcs = 5;

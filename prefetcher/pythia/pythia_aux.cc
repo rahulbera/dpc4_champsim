@@ -11,11 +11,13 @@
 #include "pythia.h"
 #include "pythia_params.h"
 
+#define CHECK_ACTION_SANITY(ai) (assert((ai) < Actions.size()))
+
 void pythia::init_knobs()
 {
-  Actions.resize(PYTHIA::scooby_max_actions, 0);
-  std::copy(PYTHIA::scooby_actions.begin(), PYTHIA::scooby_actions.end(), Actions.begin());
-  assert(Actions.size() == PYTHIA::scooby_max_actions);
+  for (uint32_t i = 0; i < PYTHIA::scooby_actions.size(); ++i)
+    Actions.push_back(PYTHIA::scooby_actions[i]);
+  assert(Actions.size() == PYTHIA::scooby_actions.size());
   assert(Actions.size() <= MAX_ACTIONS);
   assert(PYTHIA::scooby_last_pref_offset_conf_thresholds.size() == PYTHIA::scooby_dyn_degrees_type2.size() - 1);
 }
@@ -72,7 +74,7 @@ uint32_t pythia::predict(uint64_t base_address, uint64_t page, uint32_t offset, 
 
   // take an action
   action_index = brain_featurewise->chooseAction(state);
-  assert(action_index < PYTHIA::scooby_max_actions);
+  CHECK_ACTION_SANITY(action_index);
 
   // select a prefetch degree
   if (PYTHIA::scooby_enable_dyn_degree) {
