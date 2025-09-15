@@ -85,8 +85,8 @@ int main(int argc, char** argv) // NOLINT(bugprone-exception-escape)
   CLI11_PARSE(app, argc, argv);
 
   for (O3_CPU& cpu : gen_environment.cpu_view()) {
-	  cpu.show_heartbeat = hide_heartbeat ? false : true;
-	  cpu.heartbeat_interval = heartbeat_interval;
+    cpu.show_heartbeat = hide_heartbeat ? false : true;
+    cpu.heartbeat_interval = heartbeat_interval;
   }
 
   const bool warmup_given = (warmup_instr_option->count() > 0) || (deprec_warmup_instr_option->count() > 0);
@@ -144,6 +144,11 @@ int main(int argc, char** argv) // NOLINT(bugprone-exception-escape)
       champsim::json_printer{json_file}.print(phase_stats);
     }
   }
+
+  MEMORY_CONTROLLER& mc = gen_environment.dram_view();
+  fmt::print("DRAM_operate: {}\n", mc.operate_total);
+  for (uint32_t i = 0; i < 16; ++i)
+    fmt::print("BW_bucket_{}: {}\n", i, mc.bw_hist[i]);
 
   return 0;
 }
