@@ -28,6 +28,7 @@
 #include "core_inst.inc"
 #endif
 #include "defaults.hpp"
+#include "dpc_api.h"
 #include "environment.h"
 #include "ooo_cpu.h" // for O3_CPU
 #include "phase_info.h"
@@ -50,6 +51,16 @@ const unsigned PAGE_SIZE = configured_environment::page_size;
 #endif
 const unsigned LOG2_BLOCK_SIZE = champsim::lg2(BLOCK_SIZE);
 const unsigned LOG2_PAGE_SIZE = champsim::lg2(PAGE_SIZE);
+
+// Singleton environment pointer
+static configured_environment* g_env;
+
+// API
+uint8_t get_dram_bw()
+{
+  MEMORY_CONTROLLER& mc = g_env->dram_view();
+  return mc.get_bw();
+}
 
 #ifndef CHAMPSIM_TEST_BUILD
 int main(int argc, char** argv) // NOLINT(bugprone-exception-escape)
@@ -83,6 +94,8 @@ int main(int argc, char** argv) // NOLINT(bugprone-exception-escape)
   app.add_option("traces", trace_names, "The paths to the traces")->required()->expected(NUM_CPUS)->check(CLI::ExistingFile);
 
   CLI11_PARSE(app, argc, argv);
+
+  g_env = &gen_environment;
 
   for (O3_CPU& cpu : gen_environment.cpu_view()) {
     cpu.show_heartbeat = hide_heartbeat ? false : true;

@@ -269,6 +269,8 @@ public:
   void end_phase(unsigned cpu) final;
   void print_deadlock() final;
 
+  uint8_t get_bw() { return bw_bucket16_sys; }
+
   [[nodiscard]] champsim::data::bytes size() const;
 };
 
