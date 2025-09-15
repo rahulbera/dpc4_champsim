@@ -23,8 +23,8 @@
 // Get instanteneous DRAM bandwdith estimate.
 //
 // This function (1) internally measures the current DRAM bandwidth usage
-// across all DRAM channels, (2) nomalizes the utilization w.r.t
-// peak bandwidth, and (3) returns a 4-bit quantized normalized utilization.
+// across all DRAM channels, (2) nomalizes the utilization w.r.t the peak
+// DRAM bandwidth, and (3) returns a 4-bit quantized normalized utilization.
 // For example, a return value of 3 denotes the current DRAM bandwidth
 // usage is between 3x(100/16) = 18.75% to 4x(100/16) = 25% of the peak.
 //--------------------------------------------------------------------//

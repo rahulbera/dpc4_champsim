@@ -158,11 +158,6 @@ int main(int argc, char** argv) // NOLINT(bugprone-exception-escape)
     }
   }
 
-  MEMORY_CONTROLLER& mc = gen_environment.dram_view();
-  fmt::print("DRAM_operate: {}\n", mc.operate_total);
-  for (uint32_t i = 0; i < 16; ++i)
-    fmt::print("BW_bucket_{}: {}\n", i, mc.bw_hist[i]);
-
   return 0;
 }
 #endif
