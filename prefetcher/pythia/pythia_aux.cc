@@ -8,6 +8,7 @@
 #include <cassert>
 #include <iostream>
 
+#include "dpc_api.h"
 #include "pythia.h"
 #include "pythia_params.h"
 
@@ -197,6 +198,7 @@ uint32_t pythia::get_dyn_pref_degree(float max_to_avg_q_ratio, uint64_t page, in
 {
   uint32_t counted = false;
   uint32_t degree = 1;
+  bool high_bw = is_high_bw(get_dram_bw());
 
   auto st_index = find_if(signature_table.begin(), signature_table.end(), [page](Scooby_STEntry* stentry) { return stentry->page == page; });
   if (st_index != signature_table.end()) {
@@ -204,8 +206,8 @@ uint32_t pythia::get_dyn_pref_degree(float max_to_avg_q_ratio, uint64_t page, in
     bool found = (*st_index)->search_action_tracker(action, conf);
     std::vector<int32_t> conf_thresholds, deg_normal;
 
-    conf_thresholds = is_high_bw() ? PYTHIA::scooby_last_pref_offset_conf_thresholds_hbw : PYTHIA::scooby_last_pref_offset_conf_thresholds;
-    deg_normal = is_high_bw() ? PYTHIA::scooby_dyn_degrees_type2_hbw : PYTHIA::scooby_dyn_degrees_type2;
+    conf_thresholds = high_bw ? PYTHIA::scooby_last_pref_offset_conf_thresholds_hbw : PYTHIA::scooby_last_pref_offset_conf_thresholds;
+    deg_normal = high_bw ? PYTHIA::scooby_dyn_degrees_type2_hbw : PYTHIA::scooby_dyn_degrees_type2;
 
     if (found) {
       for (uint32_t index = 0; index < conf_thresholds.size(); ++index) {
@@ -382,7 +384,7 @@ void pythia::assign_reward(Scooby_PTEntry* ptentry, RewardType type)
 //----------------------------------------------------//
 int32_t pythia::compute_reward(Scooby_PTEntry* ptentry, RewardType type)
 {
-  bool high_bw = (PYTHIA::scooby_enable_hbw_reward && is_high_bw()) ? true : false;
+  bool high_bw = (PYTHIA::scooby_enable_hbw_reward && is_high_bw(get_dram_bw())) ? true : false;
   int32_t reward = 0;
 
   stats.reward.compute_reward.dist[type][high_bw]++;
@@ -483,13 +485,4 @@ void pythia::track_in_st(uint64_t page, uint32_t pred_offset, int32_t pref_offse
   }
 }
 
-void pythia::update_bw(uint8_t bw)
-{
-  NOT_PORTED;
-  assert(bw < DRAM_BW_LEVELS);
-  bw_level = bw;
-  stats.bandwidth.epochs++;
-  stats.bandwidth.histogram[bw_level]++;
-}
-
-bool pythia::is_high_bw() { return bw_level >= PYTHIA::scooby_high_bw_thresh ? true : false; }
+bool pythia::is_high_bw(uint8_t bw_level) { return bw_level >= PYTHIA::scooby_high_bw_thresh ? true : false; }

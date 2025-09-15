@@ -22,10 +22,6 @@ private:
   std::deque<Scooby_PTEntry*> prefetch_tracker;
   Scooby_PTEntry* last_evicted_tracker;
 
-  uint8_t bw_level;
-  uint8_t core_ipc;
-  uint32_t acc_level;
-
   /* Action array: basically a set of deltas to evaluate */
   std::vector<int32_t> Actions;
 
@@ -49,10 +45,7 @@ private:
   void gen_multi_degree_pref(uint64_t page, uint32_t offset, int32_t action, uint32_t pref_degree, std::vector<uint64_t>& pref_addr);
   uint32_t get_dyn_pref_degree(float max_to_avg_q_ratio, uint64_t page = 0xdeadbeef, int32_t action = 0); /* only implemented for CMAC engine 2.0 */
   int32_t getAction(uint32_t action_index);
-  void update_bw(uint8_t bw_level);
-  void update_ipc(uint8_t ipc);
-  void update_acc(uint32_t acc_level);
-  bool is_high_bw();
+  bool is_high_bw(uint8_t bw_level);
 
 public:
   using champsim::modules::prefetcher::prefetcher;

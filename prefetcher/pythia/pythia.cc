@@ -8,6 +8,7 @@
 #include "pythia.h"
 
 #include "cache.h"
+#include "dpc_api.h"
 #include "pythia_params.h"
 
 void pythia::prefetcher_initialize()
@@ -17,9 +18,6 @@ void pythia::prefetcher_initialize()
   last_evicted_tracker = NULL;
   brain_featurewise = new LearningEngineFeaturewise(PYTHIA::scooby_alpha, PYTHIA::scooby_gamma, PYTHIA::scooby_epsilon, (uint32_t)Actions.size(),
                                                     PYTHIA::scooby_seed, PYTHIA::scooby_policy, PYTHIA::scooby_learning_type);
-  bw_level = 0;
-  core_ipc = 0;
-  acc_level = 0;
 }
 
 uint32_t pythia::prefetcher_cache_operate(champsim::address addr, champsim::address ip, uint8_t cache_hit, bool useful_prefetch, access_type type,
@@ -55,9 +53,9 @@ uint32_t pythia::prefetcher_cache_operate(champsim::address addr, champsim::addr
   state->local_delta_sig2 = stentry->get_delta_sig2();
   state->local_pc_sig = stentry->get_pc_sig();
   state->local_offset_sig = stentry->get_offset_sig();
-  state->bw_level = bw_level;
-  state->is_high_bw = is_high_bw();
-  state->acc_level = acc_level;
+  state->bw_level = get_dram_bw();
+  state->is_high_bw = is_high_bw(state->bw_level);
+  state->acc_level = 0; // RBERA: not defined yet
 
   // generate prefetch predictions
   predict(address, page, offset, state, pref_addr);

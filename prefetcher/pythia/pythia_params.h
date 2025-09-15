@@ -42,7 +42,7 @@
 #define MAX_SCOOBY_DEGREE 16
 #define SCOOBY_MAX_IPC_LEVEL 4
 #define CACHE_ACC_LEVELS 4
-#define DRAM_BW_LEVELS 4
+#define DRAM_BW_LEVELS 16
 
 #define DELTA_SIG_MAX_BITS 12
 #define DELTA_SIG_SHIFT 3
@@ -77,7 +77,7 @@ static const uint32_t scooby_max_deltas = 5;
 // Reward structure
 //----------------------------//
 static const bool scooby_enable_hbw_reward = true;
-static const uint32_t scooby_high_bw_thresh = 3;
+static const uint32_t scooby_high_bw_thresh = 12;
 static const bool scooby_enable_reward_out_of_bounds = true;
 static const bool scooby_enable_reward_all = false; // can be deprecated
 
