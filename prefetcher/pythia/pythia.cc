@@ -16,8 +16,8 @@ void pythia::prefetcher_initialize()
   init_knobs();
 
   last_evicted_tracker = NULL;
-  brain_featurewise = new LearningEngineFeaturewise(PYTHIA::scooby_alpha, PYTHIA::scooby_gamma, PYTHIA::scooby_epsilon, (uint32_t)Actions.size(),
-                                                    PYTHIA::scooby_seed, PYTHIA::scooby_policy, PYTHIA::scooby_learning_type);
+  brain_featurewise = new LearningEngineFeaturewise(PYTHIA::alpha, PYTHIA::gamma, PYTHIA::epsilon, (uint32_t)Actions.size(), PYTHIA::seed, PYTHIA::policy,
+                                                    PYTHIA::learning_type);
 }
 
 uint32_t pythia::prefetcher_cache_operate(champsim::address addr, champsim::address ip, uint8_t cache_hit, bool useful_prefetch, access_type type,
@@ -49,13 +49,10 @@ uint32_t pythia::prefetcher_cache_operate(champsim::address addr, champsim::addr
   state->page = page;
   state->offset = offset;
   state->delta = !stentry->deltas.empty() ? stentry->deltas.back() : 0;
-  state->local_delta_sig = stentry->get_delta_sig();
   state->local_delta_sig2 = stentry->get_delta_sig2();
   state->local_pc_sig = stentry->get_pc_sig();
   state->local_offset_sig = stentry->get_offset_sig();
-  state->bw_level = get_dram_bw();
-  state->is_high_bw = is_high_bw(state->bw_level);
-  state->acc_level = 0; // RBERA: not defined yet
+  state->is_high_bw = is_high_bw(get_dram_bw());
 
   // generate prefetch predictions
   predict(address, page, offset, state, pref_addr);

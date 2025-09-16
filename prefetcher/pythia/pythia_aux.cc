@@ -16,11 +16,11 @@
 
 void pythia::init_knobs()
 {
-  for (uint32_t i = 0; i < PYTHIA::scooby_actions.size(); ++i)
-    Actions.push_back(PYTHIA::scooby_actions[i]);
-  assert(Actions.size() == PYTHIA::scooby_actions.size());
-  assert(Actions.size() <= MAX_ACTIONS);
-  assert(PYTHIA::scooby_last_pref_offset_conf_thresholds.size() == PYTHIA::scooby_dyn_degrees_type2.size() - 1);
+  for (uint32_t i = 0; i < PYTHIA::actions.size(); ++i)
+    Actions.push_back(PYTHIA::actions[i]);
+  assert(Actions.size() == PYTHIA::actions.size());
+  assert(Actions.size() <= PYTHIA::max_actions);
+  assert(PYTHIA::last_pref_offset_conf_thresholds.size() == PYTHIA::dyn_degrees_type2.size() - 1);
 }
 
 void pythia::update_global_state(uint64_t pc, uint64_t page, uint32_t offset, uint64_t address) { /* @rbera TODO: implement */ }
@@ -38,7 +38,7 @@ Scooby_STEntry* pythia::update_local_state(uint64_t pc, uint64_t page, uint32_t 
     signature_table.push_back(stentry);
     return stentry;
   } else {
-    if (signature_table.size() >= PYTHIA::scooby_st_size) {
+    if (signature_table.size() >= PYTHIA::st_size) {
       stats.st.evict++;
       stentry = signature_table.front();
       signature_table.pop_front();
@@ -78,7 +78,7 @@ uint32_t pythia::predict(uint64_t base_address, uint64_t page, uint32_t offset, 
   CHECK_ACTION_SANITY(action_index);
 
   // select a prefetch degree
-  if (PYTHIA::scooby_enable_dyn_degree) {
+  if (PYTHIA::enable_dyn_degree) {
     pref_degree = get_dyn_pref_degree(max_to_avg_q_ratio, page, Actions[action_index]);
   }
 
@@ -113,7 +113,7 @@ uint32_t pythia::predict(uint64_t base_address, uint64_t page, uint32_t offset, 
       MYLOG("pred_off %d out_of_bounds", predicted_offset);
       stats.predict.out_of_bounds++;
       stats.predict.out_of_bounds_dist[action_index]++;
-      if (PYTHIA::scooby_enable_reward_out_of_bounds) {
+      if (PYTHIA::enable_reward_out_of_bounds) {
         addr = 0xdeadbeef;
         track(addr, state, action_index, &ptentry);
         assert(ptentry);
@@ -164,7 +164,7 @@ bool pythia::track(uint64_t address, State* state, uint32_t action_index, Scooby
   /* new prefetched address that hasn't been seen before */
   Scooby_PTEntry* ptentry = NULL;
 
-  if (prefetch_tracker.size() >= PYTHIA::scooby_pt_size) {
+  if (prefetch_tracker.size() >= PYTHIA::pt_size) {
     stats.track.evict++;
     ptentry = prefetch_tracker.front();
     prefetch_tracker.pop_front();
@@ -182,7 +182,7 @@ bool pythia::track(uint64_t address, State* state, uint32_t action_index, Scooby
 
   ptentry = new Scooby_PTEntry(address, state, action_index);
   prefetch_tracker.push_back(ptentry);
-  assert(prefetch_tracker.size() <= PYTHIA::scooby_pt_size);
+  assert(prefetch_tracker.size() <= PYTHIA::pt_size);
 
   (*tracker) = ptentry;
   MYLOG("end@%lx", address);
@@ -206,12 +206,12 @@ uint32_t pythia::get_dyn_pref_degree(float max_to_avg_q_ratio, uint64_t page, in
     bool found = (*st_index)->search_action_tracker(action, conf);
     std::vector<int32_t> conf_thresholds, deg_normal;
 
-    conf_thresholds = high_bw ? PYTHIA::scooby_last_pref_offset_conf_thresholds_hbw : PYTHIA::scooby_last_pref_offset_conf_thresholds;
-    deg_normal = high_bw ? PYTHIA::scooby_dyn_degrees_type2_hbw : PYTHIA::scooby_dyn_degrees_type2;
+    conf_thresholds = high_bw ? PYTHIA::last_pref_offset_conf_thresholds_hbw : PYTHIA::last_pref_offset_conf_thresholds;
+    deg_normal = high_bw ? PYTHIA::dyn_degrees_type2_hbw : PYTHIA::dyn_degrees_type2;
 
     if (found) {
       for (uint32_t index = 0; index < conf_thresholds.size(); ++index) {
-        /* scooby_last_pref_offset_conf_thresholds is a sorted list in ascending order of values */
+        /* pythia_last_pref_offset_conf_thresholds is a sorted list in ascending order of values */
         if (conf <= conf_thresholds[index]) {
           degree = deg_normal[index];
           counted = true;
@@ -267,7 +267,7 @@ void pythia::reward(uint64_t address)
   MYLOG("addr @ %lx", address);
 
   stats.reward.demand.called++;
-  std::vector<Scooby_PTEntry*> ptentries = search_pt(address, PYTHIA::scooby_enable_reward_all);
+  std::vector<Scooby_PTEntry*> ptentries = search_pt(address, PYTHIA::enable_reward_all);
 
   if (ptentries.empty()) {
     MYLOG("PT miss");
@@ -384,21 +384,21 @@ void pythia::assign_reward(Scooby_PTEntry* ptentry, RewardType type)
 //----------------------------------------------------//
 int32_t pythia::compute_reward(Scooby_PTEntry* ptentry, RewardType type)
 {
-  bool high_bw = (PYTHIA::scooby_enable_hbw_reward && is_high_bw(get_dram_bw())) ? true : false;
+  bool high_bw = (PYTHIA::enable_hbw_reward && is_high_bw(get_dram_bw())) ? true : false;
   int32_t reward = 0;
 
   stats.reward.compute_reward.dist[type][high_bw]++;
 
   if (type == RewardType::correct_timely) {
-    reward = high_bw ? PYTHIA::scooby_reward_hbw_correct_timely : PYTHIA::scooby_reward_correct_timely;
+    reward = high_bw ? PYTHIA::reward_hbw_correct_timely : PYTHIA::reward_correct_timely;
   } else if (type == RewardType::correct_untimely) {
-    reward = high_bw ? PYTHIA::scooby_reward_hbw_correct_untimely : PYTHIA::scooby_reward_correct_untimely;
+    reward = high_bw ? PYTHIA::reward_hbw_correct_untimely : PYTHIA::reward_correct_untimely;
   } else if (type == RewardType::incorrect) {
-    reward = high_bw ? PYTHIA::scooby_reward_hbw_incorrect : PYTHIA::scooby_reward_incorrect;
+    reward = high_bw ? PYTHIA::reward_hbw_incorrect : PYTHIA::reward_incorrect;
   } else if (type == RewardType::none) {
-    reward = high_bw ? PYTHIA::scooby_reward_hbw_none : PYTHIA::scooby_reward_none;
+    reward = high_bw ? PYTHIA::reward_hbw_none : PYTHIA::reward_none;
   } else if (type == RewardType::out_of_bounds) {
-    reward = high_bw ? PYTHIA::scooby_reward_hbw_out_of_bounds : PYTHIA::scooby_reward_out_of_bounds;
+    reward = high_bw ? PYTHIA::reward_hbw_out_of_bounds : PYTHIA::reward_out_of_bounds;
   } else {
     std::cout << "Invalid reward type found " << type << std::endl;
     assert(false);
@@ -447,7 +447,7 @@ void pythia::register_fill(uint64_t address)
   MYLOG("fill @ %lx", address);
 
   stats.register_fill.called++;
-  std::vector<Scooby_PTEntry*> ptentries = search_pt(address, PYTHIA::scooby_enable_reward_all);
+  std::vector<Scooby_PTEntry*> ptentries = search_pt(address, PYTHIA::enable_reward_all);
   if (!ptentries.empty()) {
     stats.register_fill.set++;
     for (uint32_t index = 0; index < ptentries.size(); ++index) {
@@ -485,4 +485,4 @@ void pythia::track_in_st(uint64_t page, uint32_t pred_offset, int32_t pref_offse
   }
 }
 
-bool pythia::is_high_bw(uint8_t bw_level) { return bw_level >= PYTHIA::scooby_high_bw_thresh ? true : false; }
+bool pythia::is_high_bw(uint8_t bw_level) { return bw_level >= PYTHIA::high_bw_thresh ? true : false; }

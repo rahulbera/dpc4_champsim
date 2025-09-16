@@ -1,5 +1,5 @@
 //=======================================================================================//
-// File             : pythia/pythia_helper.h
+// File             : pythia/helper.h
 // Author           : Rahul Bera, SAFARI Research Group (write2bera@gmail.com)
 // Date             : 20/AUG/2025
 // Description      : Implements helper functionalities for Pythia (Bera+, MICRO'21)
@@ -40,13 +40,10 @@ public:
   uint64_t page;
   uint32_t offset;
   int32_t delta;
-  uint32_t local_delta_sig;
   uint32_t local_delta_sig2;
   uint32_t local_pc_sig;
   uint32_t local_offset_sig;
-  uint8_t bw_level;
   bool is_high_bw;
-  uint32_t acc_level;
 
   /* Add more states here */
 
@@ -57,13 +54,10 @@ public:
     page = 0xdeadbeef;
     offset = 0;
     delta = 0;
-    local_delta_sig = 0;
     local_delta_sig2 = 0;
     local_pc_sig = 0;
     local_offset_sig = 0;
-    bw_level = 0;
     is_high_bw = false;
-    acc_level = 0;
   }
   State() { reset(); }
   ~State() {}
@@ -113,7 +107,6 @@ public:
     offsets.push_back(offset);
   }
   ~Scooby_STEntry() {}
-  uint32_t get_delta_sig();
   uint32_t get_delta_sig2();
   uint32_t get_pc_sig();
   uint32_t get_offset_sig();
@@ -163,15 +156,15 @@ typedef struct _stats {
   struct {
     uint64_t called;
     uint64_t out_of_bounds;
-    uint64_t action_dist[MAX_ACTIONS];
-    uint64_t issue_dist[MAX_ACTIONS];
-    uint64_t pred_hit[MAX_ACTIONS];
-    uint64_t out_of_bounds_dist[MAX_ACTIONS];
+    uint64_t action_dist[PYTHIA::max_actions];
+    uint64_t issue_dist[PYTHIA::max_actions];
+    uint64_t pred_hit[PYTHIA::max_actions];
+    uint64_t out_of_bounds_dist[PYTHIA::max_actions];
     uint64_t predicted;
     uint64_t multi_deg;
     uint64_t multi_deg_called;
-    uint64_t multi_deg_histogram[MAX_SCOOBY_DEGREE + 1];
-    uint64_t deg_histogram[MAX_SCOOBY_DEGREE + 1];
+    uint64_t multi_deg_histogram[PYTHIA::max_degree + 1];
+    uint64_t deg_histogram[PYTHIA::max_degree + 1];
   } predict;
 
   struct {
@@ -198,7 +191,7 @@ typedef struct _stats {
     } assign_reward;
 
     struct {
-      uint64_t dist[MAX_REWARDS][2];
+      uint64_t dist[PYTHIA::max_rewards][2];
     } compute_reward;
 
     uint64_t correct_timely;
@@ -207,7 +200,7 @@ typedef struct _stats {
     uint64_t incorrect;
     uint64_t out_of_bounds;
     uint64_t tracker_hit;
-    uint64_t dist[MAX_ACTIONS][MAX_REWARDS];
+    uint64_t dist[PYTHIA::max_actions][PYTHIA::max_rewards];
   } reward;
 
   struct {
@@ -233,18 +226,8 @@ typedef struct _stats {
 
   struct {
     uint64_t epochs;
-    uint64_t histogram[DRAM_BW_LEVELS];
+    uint64_t histogram[PYTHIA::max_dram_bw_levels];
   } bandwidth;
-
-  struct {
-    uint64_t epochs;
-    uint64_t histogram[SCOOBY_MAX_IPC_LEVEL];
-  } ipc;
-
-  struct {
-    uint64_t epochs;
-    uint64_t histogram[CACHE_ACC_LEVELS];
-  } cache_acc;
 } PythiaStats;
 
 #endif /* __PYTHIA_HELPER_H__ */

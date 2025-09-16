@@ -1,5 +1,5 @@
 //=======================================================================================//
-// File             : pythia/pythia_params.h
+// File             : pythia/params.h
 // Author           : Rahul Bera, SAFARI Research Group (write2bera@gmail.com)
 // Date             : 20/AUG/2025
 // Description      : Defines all parameters of Pythia (Bera+, MICRO'21)
@@ -37,13 +37,6 @@
 #define DELTA_BITS 7
 #define FK_MAX_TILINGS 32
 
-#define MAX_ACTIONS 64
-#define MAX_REWARDS 16
-#define MAX_SCOOBY_DEGREE 16
-#define SCOOBY_MAX_IPC_LEVEL 4
-#define CACHE_ACC_LEVELS 4
-#define DRAM_BW_LEVELS 16
-
 #define DELTA_SIG_MAX_BITS 12
 #define DELTA_SIG_SHIFT 3
 #define PC_SIG_MAX_BITS 32
@@ -58,73 +51,55 @@
 
 namespace PYTHIA
 {
-static const float scooby_alpha = (float)0.006508802942367162;
-static const float scooby_gamma = (float)0.556300959940946;
-static const float scooby_epsilon = (float)0.0018228444309622588;
-static const uint32_t scooby_state_num_bits = 10;
-static const uint32_t scooby_max_states = 1024;
-static const uint32_t scooby_seed = 200;
-static const std::string scooby_policy = std::string("EGreedy");
-static const std::string scooby_learning_type = std::string("SARSA");
-static const std::vector<int32_t> scooby_actions = {1, 3, 4, 5, 10, 11, 12, 22, 23, 30, 32, -1, -3, -6, 0};
-static const uint32_t scooby_pt_size = 256;
-static const uint32_t scooby_st_size = 64;
-static const uint32_t scooby_max_pcs = 5;
-static const uint32_t scooby_max_offsets = 5;
-static const uint32_t scooby_max_deltas = 5;
 
 //----------------------------//
-// Reward structure
+// General parameters
 //----------------------------//
-static const bool scooby_enable_hbw_reward = true;
-static const uint32_t scooby_high_bw_thresh = 12;
-static const bool scooby_enable_reward_out_of_bounds = true;
-static const bool scooby_enable_reward_all = false; // can be deprecated
+static const float alpha = (float)0.006508802942367162;
+static const float gamma = (float)0.556300959940946;
+static const float epsilon = (float)0.0018228444309622588;
+static const uint32_t seed = 200;
+static const std::string policy = std::string("EGreedy");
+static const std::string learning_type = std::string("SARSA");
+static const std::vector<int32_t> actions = {1, 3, 4, 5, 10, 11, 12, 22, 23, 30, 32, -1, -3, -6, 0};
+static const uint32_t pt_size = 256;
+static const uint32_t st_size = 64;
+static const uint32_t max_pcs = 5;
+static const uint32_t max_offsets = 5;
+static const uint32_t max_deltas = 5;
+static const uint32_t max_actions = 64;
+static const uint32_t max_rewards = 16;
+static const uint32_t max_degree = 16;
+static const uint32_t max_dram_bw_levels = 16;
 
-static const int32_t scooby_reward_correct_timely = 20;
-static const int32_t scooby_reward_hbw_correct_timely = 20;
-static const int32_t scooby_reward_correct_untimely = 12;
-static const int32_t scooby_reward_hbw_correct_untimely = 12;
-static const int32_t scooby_reward_incorrect = -8;
-static const int32_t scooby_reward_hbw_incorrect = -14;
-static const int32_t scooby_reward_none = -4;
-static const int32_t scooby_reward_hbw_none = -2;
-static const int32_t scooby_reward_out_of_bounds = -12;
-static const int32_t scooby_reward_hbw_out_of_bounds = -12;
+//----------------------------//
+// Reward framework
+//----------------------------//
+static const bool enable_hbw_reward = true;
+static const uint32_t high_bw_thresh = 12;
+static const bool enable_reward_out_of_bounds = true;
+static const bool enable_reward_all = false; // can be deprecated
+
+static const int32_t reward_correct_timely = 20;
+static const int32_t reward_hbw_correct_timely = 20;
+static const int32_t reward_correct_untimely = 12;
+static const int32_t reward_hbw_correct_untimely = 12;
+static const int32_t reward_incorrect = -8;
+static const int32_t reward_hbw_incorrect = -14;
+static const int32_t reward_none = -4;
+static const int32_t reward_hbw_none = -2;
+static const int32_t reward_out_of_bounds = -12;
+static const int32_t reward_hbw_out_of_bounds = -12;
 
 //----------------------------//
 // Degree selection logic
 //----------------------------//
-static const bool scooby_enable_dyn_degree = true;
-static const uint32_t scooby_action_tracker_size = 2;
-static const std::vector<int32_t> scooby_last_pref_offset_conf_thresholds = {1, 3, 8};
-static const std::vector<int32_t> scooby_dyn_degrees_type2 = {1, 2, 4, 6};
-static const std::vector<int32_t> scooby_last_pref_offset_conf_thresholds_hbw = {1, 3, 8};
-static const std::vector<int32_t> scooby_dyn_degrees_type2_hbw = {1, 2, 4, 6};
-
-//----------------------------//
-// Knobs to gain visibility
-//----------------------------//
-// static const bool scooby_access_debug = false;
-// static const bool scooby_print_access_debug = false;
-// static const uint64_t scooby_print_access_debug_pc = 0xdeadbeef;
-// static const uint32_t scooby_print_access_debug_pc_count = 1000000;
-// static const bool scooby_print_trace = false;
-
-//------------------------------------//
-// Knobs for generic learning engine
-//------------------------------------//
-// static const bool le_enable_trace;
-// static const uint32_t le_trace_interval;
-// static const std::string le_trace_file_name;
-// static const uint32_t le_trace_state;
-// static const bool le_enable_score_plot;
-// static const std::vector<int32_t> le_plot_actions;
-// static const std::string le_plot_file_name;
-// static const bool le_enable_action_trace;
-// static const uint32_t le_action_trace_interval;
-// static const std::string le_action_trace_name;
-// static const bool le_enable_action_plot;
+static const bool enable_dyn_degree = true;
+static const uint32_t action_tracker_size = 2;
+static const std::vector<int32_t> last_pref_offset_conf_thresholds = {1, 3, 8};
+static const std::vector<int32_t> dyn_degrees_type2 = {1, 2, 4, 6};
+static const std::vector<int32_t> last_pref_offset_conf_thresholds_hbw = {1, 3, 8};
+static const std::vector<int32_t> dyn_degrees_type2_hbw = {1, 2, 4, 6};
 
 //------------------------------------//
 // Knobs for Featurewise learning engine
@@ -135,20 +110,6 @@ static const std::vector<int32_t> le_featurewise_num_tiles = {12, 128};
 static const std::vector<int32_t> le_featurewise_hash_types = {2, 2};
 static const std::vector<int32_t> le_featurewise_enable_tiling_offset = {1, 1};
 static const uint32_t le_featurewise_pooling_type = 2;
-static const uint32_t le_featurewise_bw_acc_check_level = 1;
-static const uint32_t le_featurewise_acc_thresh = 2;
-
-// tracing and plotting
-// static const bool le_featurewise_enable_trace;
-// static const uint32_t le_featurewise_trace_feature_type;
-// static const std::string le_featurewise_trace_feature;
-// static const uint32_t le_featurewise_trace_interval;
-// static const uint32_t le_featurewise_trace_record_count;
-// static const std::string le_featurewise_trace_file_name;
-// static const bool le_featurewise_enable_score_plot;
-// static const std::vector<int32_t> le_featurewise_plot_actions;
-// static const std::string le_featurewise_plot_file_name;
-// static const bool le_featurewise_remove_plot_script;
 
 } // namespace PYTHIA
 

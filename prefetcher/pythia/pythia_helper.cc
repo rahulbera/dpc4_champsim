@@ -33,46 +33,25 @@ void Scooby_STEntry::update(uint64_t _page, uint64_t pc, uint32_t offset, uint64
   assert(this->page == _page);
 
   /* insert PC */
-  if (this->pcs.size() >= PYTHIA::scooby_max_pcs) {
+  if (this->pcs.size() >= PYTHIA::max_pcs) {
     this->pcs.pop_front();
   }
   this->pcs.push_back(pc);
-  //   this->unique_pcs.insert(pc);
 
   /* insert deltas */
   if (!this->offsets.empty()) {
     int32_t delta = (offset > this->offsets.back()) ? (offset - this->offsets.back()) : (-1) * (this->offsets.back() - offset);
-    if (this->deltas.size() >= PYTHIA::scooby_max_deltas) {
+    if (this->deltas.size() >= PYTHIA::max_deltas) {
       this->deltas.pop_front();
     }
     this->deltas.push_back(delta);
-    // this->unique_deltas.insert(delta);
   }
 
   /* insert offset */
-  if (this->offsets.size() >= PYTHIA::scooby_max_offsets) {
+  if (this->offsets.size() >= PYTHIA::max_offsets) {
     this->offsets.pop_front();
   }
   this->offsets.push_back(offset);
-}
-
-uint32_t Scooby_STEntry::get_delta_sig()
-{
-  uint32_t signature = 0;
-  uint32_t delta = 0;
-
-  /* compute signature only using last 4 deltas */
-  uint32_t n = (uint32_t)deltas.size();
-  uint32_t ptr = (n >= 4) ? (n - 4) : 0;
-
-  for (uint32_t index = ptr; index < deltas.size(); ++index) {
-    signature = (signature << DELTA_SIG_SHIFT);
-    signature = signature & ((1ull << DELTA_SIG_MAX_BITS) - 1);
-    delta = (uint32_t)(deltas[index] & ((1ull << 7) - 1));
-    signature = (signature ^ delta);
-    signature = signature & ((1ull << DELTA_SIG_MAX_BITS) - 1);
-  }
-  return signature;
 }
 
 /* This is directly inspired by SPP's signature */
@@ -144,7 +123,7 @@ void Scooby_STEntry::insert_action_tracker(int32_t pref_offset)
     action_tracker.erase(it);
     action_tracker.push_back((*it));
   } else {
-    if (action_tracker.size() >= PYTHIA::scooby_action_tracker_size) {
+    if (action_tracker.size() >= PYTHIA::action_tracker_size) {
       ActionTracker* victim = action_tracker.front();
       action_tracker.pop_front();
       delete victim;

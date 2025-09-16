@@ -106,19 +106,18 @@ void LearningEngineFeaturewise::learn(State* state1, uint32_t action1, int32_t r
 
 uint32_t LearningEngineFeaturewise::getMaxAction(State* state, float& max_q)
 {
-  float max_q_value = 0.0, q_value = 0.0, total_q_value = 0.0;
+  float max_q_value = 0.0, q_value = 0.0;
   uint32_t selected_action = 0, init_index = 0;
 
   bool fallback = do_fallback(state);
 
   if (!fallback) {
     max_q_value = consultQ(state, 0);
-    total_q_value += max_q_value;
     init_index = 1;
   }
+
   for (uint32_t action = init_index; action < m_actions; ++action) {
     q_value = consultQ(state, action);
-    total_q_value += q_value;
     if (q_value > max_q_value) {
       max_q_value = q_value;
       selected_action = action;
@@ -206,9 +205,6 @@ bool LearningEngineFeaturewise::do_fallback(State* state)
 {
   if (state->is_high_bw) {
     stats.action.dyn_fallback_saved_bw++;
-    return false;
-  } else if (state->bw_level >= PYTHIA::le_featurewise_bw_acc_check_level && state->acc_level <= PYTHIA::le_featurewise_acc_thresh) {
-    stats.action.dyn_fallback_saved_bw_acc++;
     return false;
   }
 

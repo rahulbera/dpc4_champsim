@@ -30,7 +30,7 @@ private:
       uint64_t called;
       uint64_t explore;
       uint64_t exploit;
-      uint64_t dist[MAX_ACTIONS][2]; /* 0:explored, 1:exploited */
+      uint64_t dist[PYTHIA::max_actions][2]; /* 0:explored, 1:exploited */
       uint64_t fallback;
       uint64_t dyn_fallback_saved_bw;
       uint64_t dyn_fallback_saved_bw_acc;
