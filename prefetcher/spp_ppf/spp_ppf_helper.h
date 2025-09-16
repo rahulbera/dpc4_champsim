@@ -52,6 +52,9 @@ public:
       offset[i] = 0;
       delta[i] = 0;
     }
+
+    for (uint32_t i = 0; i < SPP_PPF::PAGES_TRACKED; ++i)
+      page_tracker[i] = 0;
   }
 
   void update_entry(uint32_t pf_sig, uint32_t pf_confidence, uint32_t pf_offset, int pf_delta);

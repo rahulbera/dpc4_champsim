@@ -180,6 +180,10 @@ uint32_t spp_ppf::prefetcher_cache_operate(champsim::address address, champsim::
   } while (do_lookahead);
 #endif
 
+  free(confidence_q);
+  free(delta_q);
+  free(perc_sum_q);
+
   return 0;
 }
 
