@@ -35,19 +35,23 @@ using trace_instr_format_t = input_instr;
 /* ================================================================== */
 
 UINT64 instrCount = 0;
-
 std::ofstream outfile;
-
 trace_instr_format_t curr_instr;
+INT64 trace_insts_left = 0;
+INT64 fast_forward_insts_left = 0;
+bool skip_dumping_instructions = false;
+
+// Prototype
+VOID insert_analysis_functions(INS ins);
 
 /* ===================================================================== */
 // Command line switches
 /* ===================================================================== */
 KNOB<std::string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o", "champsim.trace", "specify file name for Champsim tracer output");
 
-KNOB<UINT64> KnobSkipInstructions(KNOB_MODE_WRITEONCE, "pintool", "s", "0", "How many instructions to skip before tracing begins");
+KNOB<UINT64> KnobFastForward(KNOB_MODE_WRITEONCE, "pintool", "s", "0", "How many instructions to fast-forward before tracing begins");
 
-KNOB<UINT64> KnobTraceInstructions(KNOB_MODE_WRITEONCE, "pintool", "t", "1000000", "How many instructions to trace");
+KNOB<UINT64> KnobTraceLen(KNOB_MODE_WRITEONCE, "pintool", "t", "1000000", "How many instructions to trace");
 
 /* ===================================================================== */
 // Utilities
@@ -69,6 +73,59 @@ INT32 Usage()
   return -1;
 }
 
+void fast_forward_trace(UINT32 trace_size)
+{
+  fast_forward_insts_left -= trace_size;
+  if (fast_forward_insts_left < 500) {
+    std::cout << "Fast-forward almost done, switching to per instruction "
+                 "fast-forward.\n";
+    PIN_RemoveInstrumentation();
+  }
+}
+
+void fast_forward_ins()
+{
+  if (fast_forward_insts_left > 0) {
+    fast_forward_insts_left -= 1;
+    skip_dumping_instructions = true;
+  } else if (skip_dumping_instructions) {
+    std::cout << "Fast-forward finished, starting tracing\n";
+    skip_dumping_instructions = false;
+  }
+}
+
+void check_end_of_trace()
+{
+  if (trace_insts_left <= 0) {
+    std::cout << "Reaching trace length limit, terminating early.\n";
+    PIN_ExitApplication(0);
+  }
+  trace_insts_left -= 1;
+}
+
+template <typename Func>
+void for_ins_in_trace(const TRACE& trace, Func f)
+{
+  for (BBL bbl = TRACE_BblHead(trace); BBL_Valid(bbl); bbl = BBL_Next(bbl)) {
+    for (INS ins = BBL_InsHead(bbl); INS_Valid(ins); ins = INS_Next(ins)) {
+      f(ins);
+    }
+  }
+}
+
+void insert_instrumentation(TRACE trace, void* v)
+{
+  if (fast_forward_insts_left > 500) {
+    TRACE_InsertCall(trace, IPOINT_BEFORE, (AFUNPTR)fast_forward_trace, IARG_UINT32, TRACE_NumIns(trace), IARG_END);
+  } else {
+    for_ins_in_trace(trace, [](const INS& ins) {
+      INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)fast_forward_ins, IARG_END);
+      INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)check_end_of_trace, IARG_END);
+      insert_analysis_functions(ins);
+    });
+  }
+}
+
 /* ===================================================================== */
 // Analysis routines
 /* ===================================================================== */
@@ -77,12 +134,6 @@ void ResetCurrentInstruction(VOID* ip)
 {
   curr_instr = {};
   curr_instr.ip = (unsigned long long int)ip;
-}
-
-BOOL ShouldWrite()
-{
-  ++instrCount;
-  return (instrCount > KnobSkipInstructions.Value()) && (instrCount <= (KnobTraceInstructions.Value() + KnobSkipInstructions.Value()));
 }
 
 void WriteCurrentInstruction()
@@ -111,7 +162,7 @@ void WriteToSet(T* begin, T* end, UINT32 r)
 /* ===================================================================== */
 
 // Is called for every instruction and instruments reads and writes
-VOID Instruction(INS ins, VOID* v)
+VOID insert_analysis_functions(INS ins)
 {
   // begin each instruction with this function
   INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ResetCurrentInstruction, IARG_INST_PTR, IARG_END);
@@ -150,8 +201,8 @@ VOID Instruction(INS ins, VOID* v)
   }
 
   // finalize each instruction with this function
-  INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR)ShouldWrite, IARG_END);
-  INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteCurrentInstruction, IARG_END);
+  if (outfile)
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteCurrentInstruction, IARG_END);
 }
 
 /*!
@@ -177,14 +228,16 @@ int main(int argc, char* argv[])
   if (PIN_Init(argc, argv))
     return Usage();
 
+  trace_insts_left = KnobTraceLen.Value();
+  fast_forward_insts_left = KnobFastForward.Value();
+
   outfile.open(KnobOutputFile.Value().c_str(), std::ios_base::binary | std::ios_base::trunc);
   if (!outfile) {
     std::cout << "Couldn't open output trace file. Exiting." << std::endl;
     exit(1);
   }
 
-  // Register function to be called to instrument instructions
-  INS_AddInstrumentFunction(Instruction, 0);
+  TRACE_AddInstrumentFunction(insert_instrumentation, 0);
 
   // Register function to be called when the application exits
   PIN_AddFiniFunction(Fini, 0);
