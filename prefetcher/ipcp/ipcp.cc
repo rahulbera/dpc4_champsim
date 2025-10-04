@@ -15,14 +15,14 @@
 void ipcp::prefetcher_initialize()
 {
   std::cout << "IPCP_AT_L1_CONFIG" << std::endl
-            << "NUM_IP_TABLE_L1_ENTRIES" << NUM_IP_TABLE_L1_ENTRIES << std::endl
-            << "NUM_GHB_ENTRIES" << NUM_GHB_ENTRIES << std::endl
-            << "NUM_IP_INDEX_BITS" << NUM_IP_INDEX_BITS << std::endl
-            << "NUM_IP_TAG_BITS" << NUM_IP_TAG_BITS << std::endl
-            << "S_TYPE" << S_TYPE << std::endl
-            << "CS_TYPE" << CS_TYPE << std::endl
-            << "CPLX_TYPE" << CPLX_TYPE << std::endl
-            << "NL_TYPE" << NL_TYPE << std::endl
+            << "NUM_IP_TABLE_L1_ENTRIES " << NUM_IP_TABLE_L1_ENTRIES << std::endl
+            << "NUM_GHB_ENTRIES " << NUM_GHB_ENTRIES << std::endl
+            << "NUM_IP_INDEX_BITS " << NUM_IP_INDEX_BITS << std::endl
+            << "NUM_IP_TAG_BITS " << NUM_IP_TAG_BITS << std::endl
+            << "S_TYPE " << S_TYPE << std::endl
+            << "CS_TYPE " << CS_TYPE << std::endl
+            << "CPLX_TYPE " << CPLX_TYPE << std::endl
+            << "NL_TYPE " << NL_TYPE << std::endl
             << std::endl;
 }
 
