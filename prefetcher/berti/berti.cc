@@ -188,11 +188,12 @@ uint32_t berti::prefetcher_cache_operate(champsim::address address, champsim::ad
             uint64_t pf_offset = pf_line_addr & L1D_PAGE_OFFSET_MASK;
             if ((((uint64_t)1 << i) & u_vector) && !l1d_requested_offset_current_pages_table(index, pf_offset)) {
               if (pq_occupancy < pq_size && bursts < L1D_MAX_NUM_BURST_PREFETCHES) {
-                bool prefetched = intern_->prefetch_line(champsim::address{pf_addr}, true, 0);
-                if (prefetched) {
-                  assert(pf_page_addr == page_addr);
-                  l1d_add_prev_prefetches_table(index, pf_offset, current_core_cycle);
-                  bursts++;
+                if (pf_page_addr == page_addr) {
+                  bool prefetched = intern_->prefetch_line(champsim::address{pf_addr}, true, 0);
+                  if (prefetched) {
+                    l1d_add_prev_prefetches_table(index, pf_offset, current_core_cycle);
+                    bursts++;
+                  }
                 }
               } else { // record last burst
                 l1d_current_pages_table[index].last_burst = i;
@@ -211,11 +212,12 @@ uint32_t berti::prefetcher_cache_operate(champsim::address address, champsim::ad
             uint64_t pf_offset = pf_line_addr & L1D_PAGE_OFFSET_MASK;
             if ((((uint64_t)1 << i) & u_vector) && !l1d_requested_offset_current_pages_table(index, pf_offset)) {
               if (pq_occupancy < pq_size && bursts < L1D_MAX_NUM_BURST_PREFETCHES) {
-                bool prefetched = intern_->prefetch_line(champsim::address{pf_addr}, true, 0);
-                if (prefetched) {
-                  assert(pf_page_addr == page_addr);
-                  l1d_add_prev_prefetches_table(index, pf_offset, current_core_cycle);
-                  bursts++;
+                if (pf_page_addr == page_addr) {
+                  bool prefetched = intern_->prefetch_line(champsim::address{pf_addr}, true, 0);
+                  if (prefetched) {
+                    l1d_add_prev_prefetches_table(index, pf_offset, current_core_cycle);
+                    bursts++;
+                  }
                 }
               } else { // record last burst
                 l1d_current_pages_table[index].last_burst = i;
@@ -233,11 +235,12 @@ uint32_t berti::prefetcher_cache_operate(champsim::address address, champsim::ad
             uint64_t pf_offset = pf_line_addr & L1D_PAGE_OFFSET_MASK;
             if ((((uint64_t)1 << i) & u_vector) && !l1d_requested_offset_current_pages_table(index, pf_offset)) {
               if (pq_occupancy < pq_size && bursts < L1D_MAX_NUM_BURST_PREFETCHES) {
-                bool prefetched = intern_->prefetch_line(champsim::address{pf_addr}, true, 0);
-                if (prefetched) {
-                  assert(pf_page_addr == page_addr);
-                  l1d_add_prev_prefetches_table(index, pf_offset, current_core_cycle);
-                  bursts++;
+                if (pf_page_addr == page_addr) {
+                  bool prefetched = intern_->prefetch_line(champsim::address{pf_addr}, true, 0);
+                  if (prefetched) {
+                    l1d_add_prev_prefetches_table(index, pf_offset, current_core_cycle);
+                    bursts++;
+                  }
                 }
               } else { // record last burst
                 l1d_current_pages_table[index].last_burst = i;
@@ -251,11 +254,12 @@ uint32_t berti::prefetcher_cache_operate(champsim::address address, champsim::ad
             pf_offset = pf_line_addr & L1D_PAGE_OFFSET_MASK;
             if ((((uint64_t)1 << j) & u_vector) && !l1d_requested_offset_current_pages_table(index, pf_offset)) {
               if (pq_occupancy < pq_size && bursts < L1D_MAX_NUM_BURST_PREFETCHES) {
-                bool prefetched = intern_->prefetch_line(champsim::address{pf_addr}, true, 0);
-                if (prefetched) {
-                  assert(pf_page_addr == page_addr);
-                  l1d_add_prev_prefetches_table(index, pf_offset, current_core_cycle);
-                  bursts++;
+                if (pf_page_addr == page_addr) {
+                  bool prefetched = intern_->prefetch_line(champsim::address{pf_addr}, true, 0);
+                  if (prefetched) {
+                    l1d_add_prev_prefetches_table(index, pf_offset, current_core_cycle);
+                    bursts++;
+                  }
                 }
               } else {
                 // record only positive burst
@@ -274,10 +278,11 @@ uint32_t berti::prefetcher_cache_operate(champsim::address address, champsim::ad
       uint64_t pf_offset = pf_line_addr & L1D_PAGE_OFFSET_MASK;
       if (!l1d_requested_offset_current_pages_table(index, pf_offset)          // Only prefetch if not demanded
           && (!match_confidence || (((uint64_t)1 << pf_offset) & u_vector))) { // And prev. accessed
-        bool prefetched = intern_->prefetch_line(champsim::address{pf_addr}, true, 0);
-        if (prefetched) {
-          assert(pf_page_addr == page_addr);
-          l1d_add_prev_prefetches_table(index, pf_offset, current_core_cycle);
+        if (pf_page_addr == page_addr) {
+          bool prefetched = intern_->prefetch_line(champsim::address{pf_addr}, true, 0);
+          if (prefetched) {
+            l1d_add_prev_prefetches_table(index, pf_offset, current_core_cycle);
+          }
         }
       }
     }
